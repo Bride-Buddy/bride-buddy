@@ -13,10 +13,10 @@ const Index = () => {
             <Heart className="w-16 h-16 text-primary fill-primary" />
           </div>
           <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
-            Wedding Planner AI
+            Bride Buddy
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Your intelligent assistant for planning the perfect wedding. Get personalized recommendations, timeline guidance, and expert advice—all powered by AI.
+            Your 24/7 wedding planning companion. Get conversational guidance, personalized checklists, vendor suggestions, budget tracking, and expert etiquette advice—all in one place.
           </p>
           <Button
             onClick={() => navigate("/auth")}
