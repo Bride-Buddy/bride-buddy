@@ -15,9 +15,6 @@ const Index = () => {
           <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
             Bride Buddy
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Your 24/7 wedding planning companion. Get conversational guidance, personalized checklists, vendor suggestions, budget tracking, and expert etiquette advice—all in one place.
-          </p>
           <Button
             onClick={() => navigate("/auth")}
             size="lg"
