@@ -15,13 +15,17 @@ const Index = () => {
           <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
             Bride Buddy
           </h1>
+          <div className="mb-8 max-w-2xl mx-auto p-6 bg-card/80 backdrop-blur-sm rounded-2xl shadow-[var(--shadow-elegant)] border border-primary/20">
+            <p className="text-xl text-foreground leading-relaxed">
+              Hey gorgeous! I'm Bride Buddy 💍, your personal wedding assistant. Let's get started by creating your personal account so all your wedding planning info is saved.
+            </p>
+          </div>
           <Button
             onClick={() => navigate("/auth")}
             size="lg"
             className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity text-lg px-8 py-6 shadow-[var(--shadow-elegant)]"
           >
-            Start Planning for Free
-            <Sparkles className="ml-2 w-5 h-5" />
+            Create an Account
           </Button>
         </div>
 
