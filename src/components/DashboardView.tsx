@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, DollarSign, Users, Car, CheckCircle2, Plus } from "lucide-react";
+import { Calendar, DollarSign, Users, Car, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import Checklist from "./Checklist";
 
 interface DashboardViewProps {
   userId: string;
-  view: "overview" | "todo" | "finance" | "vendors" | "timeline" | null;
-  onViewChange: (view: "overview" | "todo" | "finance" | "vendors" | "timeline" | null) => void;
+  view: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null;
+  onViewChange: (view: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null) => void;
 }
 
 interface ChecklistItem {
@@ -336,6 +337,13 @@ const DashboardView = ({ userId, view, onViewChange }: DashboardViewProps) => {
           View Dashboard
         </Button>
         <Button
+          variant={view === "checklist" ? "default" : "outline"}
+          onClick={() => onViewChange("checklist")}
+          size="sm"
+        >
+          Full Checklist
+        </Button>
+        <Button
           variant={view === "todo" ? "default" : "outline"}
           onClick={() => onViewChange("todo")}
           size="sm"
@@ -366,6 +374,7 @@ const DashboardView = ({ userId, view, onViewChange }: DashboardViewProps) => {
       </div>
 
       {view === "overview" && renderOverview()}
+      {view === "checklist" && <Checklist userId={userId} />}
       {view === "todo" && renderTodoToday()}
       {view === "finance" && renderFinanceTracker()}
       {view === "vendors" && renderVendorTracker()}

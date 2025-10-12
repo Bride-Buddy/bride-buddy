@@ -25,7 +25,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | null>(null);
+  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -175,7 +175,7 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline") => {
+  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist") => {
     if (view) {
       setDashboardView(view);
     } else {
@@ -206,6 +206,13 @@ const Chat = ({ userId }: ChatProps) => {
                     className="hover:bg-primary/10"
                   >
                     View Dashboard
+                  </Button>
+                  <Button
+                    onClick={() => handleQuickReply("Show my full checklist", "checklist")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    Full Checklist
                   </Button>
                   <Button
                     onClick={() => handleQuickReply("What are my tasks for today?", "todo")}
