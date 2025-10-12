@@ -7,6 +7,7 @@ import { Calendar, DollarSign, Users, Car, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import Checklist from "./Checklist";
 import VendorTracker from "./VendorTracker";
+import WeddingTimeline from "./WeddingTimeline";
 
 interface DashboardViewProps {
   userId: string;
@@ -379,7 +380,7 @@ const DashboardView = ({ userId, view, onViewChange }: DashboardViewProps) => {
       {view === "todo" && renderTodoToday()}
       {view === "finance" && renderFinanceTracker()}
       {view === "vendors" && <VendorTracker userId={userId} />}
-      {view === "timeline" && renderTimeline()}
+      {view === "timeline" && <WeddingTimeline userId={userId} />}
     </div>
   );
 };
