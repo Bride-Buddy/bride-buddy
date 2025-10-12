@@ -116,8 +116,12 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          last_message_date: string | null
+          messages_today: number | null
           partner_name: string | null
           relationship_years: string | null
+          subscription_tier: string | null
+          trial_start_date: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -127,8 +131,12 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          last_message_date?: string | null
+          messages_today?: number | null
           partner_name?: string | null
           relationship_years?: string | null
+          subscription_tier?: string | null
+          trial_start_date?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -138,8 +146,12 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          last_message_date?: string | null
+          messages_today?: number | null
           partner_name?: string | null
           relationship_years?: string | null
+          subscription_tier?: string | null
+          trial_start_date?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
@@ -240,7 +252,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reset_daily_messages: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
