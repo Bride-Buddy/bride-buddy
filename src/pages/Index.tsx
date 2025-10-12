@@ -11,7 +11,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
           <div className="inline-flex items-center justify-center mb-6">
-            <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
+            <img src={logo} alt="Bride Buddy Logo" className="w-72 h-72" />
           </div>
           <div className="mb-8 max-w-2xl mx-auto p-6 bg-card/80 backdrop-blur-sm rounded-2xl shadow-[var(--shadow-elegant)] border border-primary/20">
             <p className="text-xl text-foreground leading-relaxed">
