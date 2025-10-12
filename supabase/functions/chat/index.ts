@@ -83,8 +83,17 @@ Be supportive, detail-oriented, conversational, and help them feel confident in 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    // Log detailed error server-side for debugging
+    console.error('Chat function error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Return safe generic message to client
+    return new Response(JSON.stringify({ 
+      error: 'Unable to process your request. Please try again.' 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
