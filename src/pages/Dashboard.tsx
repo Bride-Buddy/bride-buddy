@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { Heart, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userName, setUserName] = useState<string>("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -35,6 +39,36 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true' && userName) {
+      toast({
+        title: "All done, " + userName + "! 💖",
+        description: "Your personal Bride Buddy account is ready. Everything you add will be saved so we can pick up right where you leave off.",
+        duration: 6000,
+      });
+      // Remove the query parameter
+      navigate('/dashboard', { replace: true });
+    }
+  }, [searchParams, userName, navigate, toast]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -51,7 +85,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-2">
             <Heart className="w-6 h-6 text-primary fill-primary" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Wedding Planner AI
+              Bride Buddy
             </h1>
           </div>
           <Button

@@ -38,6 +38,47 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist: {
+        Row: {
+          completed: boolean
+          created_at: string | null
+          due_date: string | null
+          emoji: string | null
+          id: string
+          task_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string | null
+          due_date?: string | null
+          emoji?: string | null
+          id?: string
+          task_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string | null
+          due_date?: string | null
+          emoji?: string | null
+          id?: string
+          task_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -78,6 +119,7 @@ export type Database = {
           partner_name: string | null
           updated_at: string | null
           user_id: string
+          username: string | null
           wedding_date: string | null
         }
         Insert: {
@@ -87,6 +129,7 @@ export type Database = {
           partner_name?: string | null
           updated_at?: string | null
           user_id: string
+          username?: string | null
           wedding_date?: string | null
         }
         Update: {
@@ -96,9 +139,98 @@ export type Database = {
           partner_name?: string | null
           updated_at?: string | null
           user_id?: string
+          username?: string | null
           wedding_date?: string | null
         }
         Relationships: []
+      }
+      timeline: {
+        Row: {
+          car_position: number | null
+          completed_tasks: number | null
+          created_at: string | null
+          engagement_date: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          wedding_date: string | null
+        }
+        Insert: {
+          car_position?: number | null
+          completed_tasks?: number | null
+          created_at?: string | null
+          engagement_date?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          wedding_date?: string | null
+        }
+        Update: {
+          car_position?: number | null
+          completed_tasks?: number | null
+          created_at?: string | null
+          engagement_date?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          wedding_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          due_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          paid: boolean
+          service: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          paid?: boolean
+          service: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          paid?: boolean
+          service?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {

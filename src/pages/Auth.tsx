@@ -8,11 +8,15 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Heart } from "lucide-react";
 
+type SignupStep = "name" | "username" | "password" | "email";
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [signupStep, setSignupStep] = useState<SignupStep>("name");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -24,6 +28,16 @@ const Auth = () => {
       }
     });
   }, [navigate]);
+
+  const handleNextStep = () => {
+    if (signupStep === "name" && fullName.trim()) {
+      setSignupStep("username");
+    } else if (signupStep === "username" && username.trim()) {
+      setSignupStep("email");
+    } else if (signupStep === "email" && email.trim()) {
+      setSignupStep("password");
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +52,8 @@ const Auth = () => {
         if (error) throw error;
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        // Sign up flow
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -48,12 +63,34 @@ const Auth = () => {
             },
           },
         });
-        if (error) throw error;
-        toast({
-          title: "Success!",
-          description: "Your account has been created. You can now sign in.",
-        });
-        setIsLogin(true);
+        
+        if (signUpError) throw signUpError;
+        
+        if (authData.user) {
+          // Create profile with username
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              username: username,
+              full_name: fullName 
+            })
+            .eq('user_id', authData.user.id);
+
+          if (profileError) throw profileError;
+
+          // Initialize timeline for the user
+          const { error: timelineError } = await supabase
+            .from('timeline')
+            .insert({
+              user_id: authData.user.id,
+              car_position: 0,
+              completed_tasks: 0
+            });
+
+          if (timelineError) throw timelineError;
+        }
+        
+        navigate("/dashboard?new=true");
       }
     } catch (error: any) {
       toast({
@@ -66,38 +103,75 @@ const Auth = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-accent/30 p-4">
-      <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Heart className="w-8 h-8 text-primary fill-primary" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Wedding Planner AI
-            </h1>
-          </div>
-          <p className="text-muted-foreground">
-            {isLogin ? "Welcome back!" : "Start planning your dream wedding"}
-          </p>
-        </div>
+  const getStepPrompt = () => {
+    if (isLogin) return null;
+    
+    switch (signupStep) {
+      case "name":
+        return "What should I call you?";
+      case "username":
+        return "Pick a username you'll remember";
+      case "email":
+        return "What's your email address?";
+      case "password":
+        return "Set a password for your account";
+    }
+  };
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          {!isLogin && (
-            <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required={!isLogin}
-                className="mt-1"
-              />
-            </div>
-          )}
-          
+  const renderSignupStep = () => {
+    switch (signupStep) {
+      case "name":
+        return (
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="fullName">{getStepPrompt()}</Label>
+            <Input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="mt-1"
+              placeholder="Enter your name"
+              autoFocus
+            />
+            <Button
+              type="button"
+              onClick={handleNextStep}
+              className="w-full mt-4 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+              disabled={!fullName.trim()}
+            >
+              Next
+            </Button>
+          </div>
+        );
+      case "username":
+        return (
+          <div>
+            <Label htmlFor="username">{getStepPrompt()}</Label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="mt-1"
+              placeholder="Choose a username"
+              autoFocus
+            />
+            <Button
+              type="button"
+              onClick={handleNextStep}
+              className="w-full mt-4 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+              disabled={!username.trim()}
+            >
+              Next
+            </Button>
+          </div>
+        );
+      case "email":
+        return (
+          <div>
+            <Label htmlFor="email">{getStepPrompt()}</Label>
             <Input
               id="email"
               type="email"
@@ -105,11 +179,23 @@ const Auth = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1"
+              placeholder="your.email@example.com"
+              autoFocus
             />
+            <Button
+              type="button"
+              onClick={handleNextStep}
+              className="w-full mt-4 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+              disabled={!email.trim()}
+            >
+              Next
+            </Button>
           </div>
-
+        );
+      case "password":
+        return (
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{getStepPrompt()}</Label>
             <Input
               id="password"
               type="password"
@@ -118,22 +204,83 @@ const Auth = () => {
               required
               minLength={6}
               className="mt-1"
+              placeholder="At least 6 characters"
+              autoFocus
             />
+            <Button
+              type="submit"
+              className="w-full mt-4 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+              disabled={loading || password.length < 6}
+            >
+              {loading ? "Creating your account..." : "Create Account"}
+            </Button>
           </div>
+        );
+    }
+  };
 
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
-            disabled={loading}
-          >
-            {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
-          </Button>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-accent/30 p-4">
+      <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-4">
+            <Heart className="w-8 h-8 text-primary fill-primary" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              Bride Buddy
+            </h1>
+          </div>
+          <p className="text-muted-foreground">
+            {isLogin ? "Welcome back!" : "Let's set up your account"}
+          </p>
+        </div>
+
+        <form onSubmit={handleAuth} className="space-y-4">
+          {isLogin ? (
+            <>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Sign In"}
+              </Button>
+            </>
+          ) : (
+            renderSignupStep()
+          )}
         </form>
 
         <div className="mt-4 text-center">
           <button
             type="button"
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setSignupStep("name");
+            }}
             className="text-sm text-primary hover:underline"
           >
             {isLogin
