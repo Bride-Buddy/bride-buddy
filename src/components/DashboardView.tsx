@@ -9,6 +9,7 @@ import Checklist from "./Checklist";
 import VendorTracker from "./VendorTracker";
 import WeddingTimeline from "./WeddingTimeline";
 import TodoToday from "./TodoToday";
+import FinanceTracker from "./FinanceTracker";
 
 interface DashboardViewProps {
   userId: string;
@@ -379,7 +380,7 @@ const DashboardView = ({ userId, view, onViewChange }: DashboardViewProps) => {
       {view === "overview" && renderOverview()}
       {view === "checklist" && <Checklist userId={userId} />}
       {view === "todo" && <TodoToday userId={userId} />}
-      {view === "finance" && renderFinanceTracker()}
+      {view === "finance" && <FinanceTracker userId={userId} />}
       {view === "vendors" && <VendorTracker userId={userId} />}
       {view === "timeline" && <WeddingTimeline userId={userId} />}
     </div>
