@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DashboardView from "./DashboardView";
 
 interface Message {
   id: string;
@@ -24,6 +25,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
+  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -173,13 +175,19 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (action: string) => {
-    setInput(action);
+  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline") => {
+    if (view) {
+      setDashboardView(view);
+    } else {
+      setInput(action);
+    }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)]">
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4">
+    <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
+      <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
+      
+      <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
           <Card className="p-8 text-center bg-gradient-to-br from-card to-accent/10 border-none shadow-[var(--shadow-elegant)]">
             <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
@@ -193,35 +201,35 @@ const Chat = ({ userId }: ChatProps) => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard")}
+                    onClick={() => handleQuickReply("Show me my dashboard", "overview")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
                     View Dashboard
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("What are my tasks for today?")}
+                    onClick={() => handleQuickReply("What are my tasks for today?", "todo")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
                     To-Do Today
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show my finance tracker")}
+                    onClick={() => handleQuickReply("Show my finance tracker", "finance")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
                     Finance Tracker
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show my vendor tracker")}
+                    onClick={() => handleQuickReply("Show my vendor tracker", "vendors")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
                     Vendor Tracker
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show my wedding timeline")}
+                    onClick={() => handleQuickReply("Show my wedding timeline", "timeline")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
