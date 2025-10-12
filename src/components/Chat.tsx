@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
+import { TrialBanner } from "./TrialBanner";
 
 interface Message {
   id: string;
@@ -26,6 +27,9 @@ const Chat = ({ userId }: ChatProps) => {
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null>(null);
+  const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
+  const [messagesToday, setMessagesToday] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -33,12 +37,29 @@ const Chat = ({ userId }: ChatProps) => {
     const fetchUserProfile = async () => {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, trial_start_date, subscription_tier, messages_today, last_message_date')
         .eq('user_id', userId)
         .single();
       
-      if (profile?.full_name) {
-        setUserName(profile.full_name);
+      if (profile) {
+        setUserName(profile.full_name || "");
+        setTrialStartDate(profile.trial_start_date);
+        setSubscriptionTier(profile.subscription_tier || "trial");
+        
+        // Check if we need to reset messages_today
+        const today = new Date().toISOString().split('T')[0];
+        const lastMessageDate = profile.last_message_date;
+        
+        if (lastMessageDate !== today) {
+          // Reset messages for new day
+          await supabase
+            .from('profiles')
+            .update({ messages_today: 0, last_message_date: today })
+            .eq('user_id', userId);
+          setMessagesToday(0);
+        } else {
+          setMessagesToday(profile.messages_today || 0);
+        }
       }
     };
 
@@ -132,6 +153,16 @@ const Chat = ({ userId }: ChatProps) => {
   const sendMessage = async () => {
     if (!input.trim() || !sessionId || loading) return;
 
+    // Check message limits for free tier
+    if (subscriptionTier === 'free' && messagesToday >= 20) {
+      toast({
+        title: "Message Limit Reached 💝",
+        description: "You've used all 20 messages today! Upgrade to VIP for unlimited messages ✨",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const userMessage = input.trim();
     setInput("");
     setLoading(true);
@@ -146,6 +177,19 @@ const Chat = ({ userId }: ChatProps) => {
         });
 
       if (insertError) throw insertError;
+
+      // Increment message count for free tier users
+      if (subscriptionTier === 'free') {
+        const newCount = messagesToday + 1;
+        await supabase
+          .from('profiles')
+          .update({ 
+            messages_today: newCount,
+            last_message_date: new Date().toISOString().split('T')[0]
+          })
+          .eq('user_id', userId);
+        setMessagesToday(newCount);
+      }
 
       const { data, error } = await supabase.functions.invoke("chat", {
         body: {
@@ -183,8 +227,20 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
+  const handleUpgrade = () => {
+    toast({
+      title: "Upgrade to VIP ✨",
+      description: "Contact us to upgrade your account to VIP and unlock unlimited access!",
+    });
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
+      <TrialBanner 
+        trialStartDate={trialStartDate} 
+        subscriptionTier={subscriptionTier}
+        onUpgrade={handleUpgrade}
+      />
       <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
       
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
