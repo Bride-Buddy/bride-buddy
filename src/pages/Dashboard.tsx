@@ -66,7 +66,7 @@ const Dashboard = () => {
         duration: 6000,
       });
       // Remove the query parameter
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [searchParams, userName, navigate, toast]);
 

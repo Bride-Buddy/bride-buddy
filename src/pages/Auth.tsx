@@ -24,7 +24,7 @@ const Auth = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/dashboard");
+        navigate("/");
       }
     });
   }, [navigate]);
@@ -50,14 +50,14 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
-        navigate("/dashboard");
+        navigate("/");
       } else {
         // Sign up flow
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: fullName,
             },
@@ -78,7 +78,7 @@ const Auth = () => {
           }
         }
         
-        navigate("/dashboard?new=true");
+        navigate("/?new=true");
       }
     } catch (error: any) {
       toast({
