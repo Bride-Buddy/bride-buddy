@@ -67,27 +67,15 @@ const Auth = () => {
         if (signUpError) throw signUpError;
         
         if (authData.user) {
-          // Create profile with username
+          // Update profile with username (profile and timeline are created by trigger)
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({ 
-              username: username,
-              full_name: fullName 
-            })
+            .update({ username: username })
             .eq('user_id', authData.user.id);
 
-          if (profileError) throw profileError;
-
-          // Initialize timeline for the user
-          const { error: timelineError } = await supabase
-            .from('timeline')
-            .insert({
-              user_id: authData.user.id,
-              car_position: 0,
-              completed_tasks: 0
-            });
-
-          if (timelineError) throw timelineError;
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
         }
         
         navigate("/dashboard?new=true");
