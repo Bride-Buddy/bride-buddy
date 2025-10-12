@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import Chat from "@/components/Chat";
+import OnboardingDialog from "@/components/OnboardingDialog";
 import { Button } from "@/components/ui/button";
 import { Heart, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -101,6 +102,7 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-5xl">
+        {userName && <OnboardingDialog userId={user.id} userName={userName} />}
         <Chat userId={user.id} />
       </main>
     </div>

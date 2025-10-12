@@ -117,6 +117,7 @@ export type Database = {
           full_name: string | null
           id: string
           partner_name: string | null
+          relationship_years: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -127,6 +128,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           partner_name?: string | null
+          relationship_years?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           partner_name?: string | null
+          relationship_years?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
