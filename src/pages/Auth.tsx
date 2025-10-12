@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart } from "lucide-react";
+import logo from "@/assets/bride-buddy-logo.png";
 
 type SignupStep = "name" | "username" | "password" | "email";
 
@@ -211,11 +211,8 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-accent/30 p-4">
       <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Heart className="w-8 h-8 text-primary fill-primary" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Bride Buddy
-            </h1>
+          <div className="inline-flex items-center justify-center mb-4">
+            <img src={logo} alt="Bride Buddy Logo" className="w-32 h-32" />
           </div>
           <p className="text-muted-foreground">
             {isLogin ? "Welcome back!" : "Let's set up your account"}

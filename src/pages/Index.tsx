@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, Sparkles, Calendar, MessageCircle } from "lucide-react";
+import logo from "@/assets/bride-buddy-logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -9,12 +10,9 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/30">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
-          <div className="inline-flex items-center gap-3 mb-6">
-            <Heart className="w-16 h-16 text-primary fill-primary" />
+          <div className="inline-flex items-center justify-center mb-6">
+            <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
           </div>
-          <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
-            Bride Buddy
-          </h1>
           <div className="mb-8 max-w-2xl mx-auto p-6 bg-card/80 backdrop-blur-sm rounded-2xl shadow-[var(--shadow-elegant)] border border-primary/20">
             <p className="text-xl text-foreground leading-relaxed">
               Hey gorgeous! I'm Bride Buddy 💍, your personal wedding assistant. Let's get started by creating your personal account so all your wedding planning info is saved.
