@@ -22,10 +22,25 @@ const Chat = ({ userId }: ChatProps) => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
+  const [isReturningUser, setIsReturningUser] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', userId)
+        .single();
+      
+      if (profile?.full_name) {
+        setUserName(profile.full_name);
+      }
+    };
+
+    fetchUserProfile();
     createOrGetSession();
   }, [userId]);
 
@@ -62,6 +77,7 @@ const Chat = ({ userId }: ChatProps) => {
 
     if (sessions && sessions.length > 0) {
       setSessionId(sessions[0].id);
+      setIsReturningUser(true);
     } else {
       const { data: newSession, error: createError } = await supabase
         .from("chat_sessions")
@@ -79,6 +95,7 @@ const Chat = ({ userId }: ChatProps) => {
       }
 
       setSessionId(newSession.id);
+      setIsReturningUser(false);
     }
   };
 
@@ -156,16 +173,70 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
+  const handleQuickReply = (action: string) => {
+    setInput(action);
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-180px)]">
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4">
         {messages.length === 0 ? (
           <Card className="p-8 text-center bg-gradient-to-br from-card to-accent/10 border-none shadow-[var(--shadow-elegant)]">
             <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-            <h2 className="text-2xl font-bold mb-2">Welcome to Your Wedding Planning Assistant</h2>
-            <p className="text-muted-foreground">
-              I'm here to help you plan every detail of your special day. Ask me anything about venues, themes, budgets, or timelines!
-            </p>
+            {isReturningUser && userName ? (
+              <>
+                <h2 className="text-2xl font-bold mb-2">
+                  Welcome back, {userName}! 🚗💍
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Your wedding adventure continues. What would you like to do today?
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    onClick={() => handleQuickReply("Show me my dashboard")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    View Dashboard
+                  </Button>
+                  <Button
+                    onClick={() => handleQuickReply("What are my tasks for today?")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    To-Do Today
+                  </Button>
+                  <Button
+                    onClick={() => handleQuickReply("Show my finance tracker")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    Finance Tracker
+                  </Button>
+                  <Button
+                    onClick={() => handleQuickReply("Show my vendor tracker")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    Vendor Tracker
+                  </Button>
+                  <Button
+                    onClick={() => handleQuickReply("Show my wedding timeline")}
+                    variant="outline"
+                    className="hover:bg-primary/10"
+                  >
+                    Wedding Timeline
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Welcome to Your Wedding Planning Assistant</h2>
+                <p className="text-muted-foreground">
+                  I'm here to help you plan every detail of your special day. Ask me anything about venues, themes, budgets, or timelines!
+                </p>
+              </>
+            )}
           </Card>
         ) : (
           messages.map((message) => (
