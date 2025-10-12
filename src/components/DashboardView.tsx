@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, DollarSign, Users, Car, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import Checklist from "./Checklist";
+import VendorTracker from "./VendorTracker";
 
 interface DashboardViewProps {
   userId: string;
@@ -377,7 +378,7 @@ const DashboardView = ({ userId, view, onViewChange }: DashboardViewProps) => {
       {view === "checklist" && <Checklist userId={userId} />}
       {view === "todo" && renderTodoToday()}
       {view === "finance" && renderFinanceTracker()}
-      {view === "vendors" && renderVendorTracker()}
+      {view === "vendors" && <VendorTracker userId={userId} />}
       {view === "timeline" && renderTimeline()}
     </div>
   );
