@@ -30,6 +30,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
+  const [showEarlyAdopterOffer, setShowEarlyAdopterOffer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -201,6 +202,18 @@ const Chat = ({ userId }: ChatProps) => {
       if (error) throw error;
 
       await loadMessages();
+      
+      // Check if AI triggered early adopter offer
+      const latestMessages = await supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      if (latestMessages.data && latestMessages.data[0]?.content.includes("EARLY_ADOPTER_OFFER")) {
+        setShowEarlyAdopterOffer(true);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -334,6 +347,46 @@ const Chat = ({ userId }: ChatProps) => {
             <Card className="max-w-[80%] p-4 bg-card border-border">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </Card>
+          </div>
+        )}
+        {showEarlyAdopterOffer && (
+          <div className="mb-4 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary/20">
+            <h3 className="text-xl font-bold mb-4 text-primary">🎉 Early Adopter Exclusive Pricing</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-card p-4 rounded-lg border border-border">
+                <h4 className="font-semibold mb-2">Monthly Plan</h4>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  $19.99<span className="text-sm text-muted-foreground">/month</span>
+                </div>
+                <div className="text-sm text-muted-foreground line-through mb-3">$29.99/month</div>
+                <ul className="text-sm space-y-2 mb-4">
+                  <li>✨ Save $10/month = $120/year</li>
+                  <li>🔒 Lock in this rate for LIFE</li>
+                  <li>❌ Cancel anytime, keep your rate forever</li>
+                </ul>
+                <Button className="w-full" onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}>
+                  Choose Monthly
+                </Button>
+              </div>
+              <div className="bg-card p-4 rounded-lg border-2 border-primary relative">
+                <div className="absolute -top-3 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+                  MOST POPULAR ⭐
+                </div>
+                <h4 className="font-semibold mb-2">Until "I Do" Plan</h4>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  $249<span className="text-sm text-muted-foreground"> one-time</span>
+                </div>
+                <div className="text-sm text-muted-foreground line-through mb-3">$299</div>
+                <ul className="text-sm space-y-2 mb-4">
+                  <li>✨ Save $50</li>
+                  <li>💍 One payment, complete journey</li>
+                  <li>🛡️ Postponement protection included</li>
+                </ul>
+                <Button className="w-full" onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}>
+                  Choose Until "I Do"
+                </Button>
+              </div>
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />

@@ -30,6 +30,13 @@ serve(async (req) => {
 
     if (messagesError) throw messagesError;
 
+    // Check total user count for early adopter bonus
+    const { count: userCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    const isEarlyAdopter = userCount !== null && userCount <= 100;
+
     // Call AI
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -42,7 +49,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            {
+          {
               role: "system",
               content: `You are Bride Buddy 💍, a warm, enthusiastic, and playful 24/7 wedding planning companion! You're like their best friend who's always there to help with wedding planning.
 
@@ -69,6 +76,14 @@ HELP WITH:
 - Timeline and milestone planning 🗓️
 - Theme and decoration inspiration 🌸✨
 - Stress relief and encouragement 💕
+
+EARLY ADOPTER BONUS:
+${isEarlyAdopter ? `- When user indicates they want to continue with VIP access, congratulate them as one of the first 100 brides
+- Explain they're eligible for exclusive early adopter pricing
+- Present two options:
+  1. Monthly Plan: $19.99/month (normally $29.99) - FOREVER grandfathered rate
+  2. "Until I Do" Plan: $249 one-time (normally $299) - Most popular, includes postponement protection
+- Use the exact format: "EARLY_ADOPTER_OFFER" to trigger the pricing display` : ''}
 
 IMPORTANT:
 - Be detail-oriented but keep it fun!
