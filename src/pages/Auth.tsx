@@ -12,10 +12,8 @@ import logo from "@/assets/bride-buddy-logo.png";
 const Auth = () => {
   const [step, setStep] = useState<"info" | "verify">("info");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [otpMethod, setOtpMethod] = useState<"email" | "phone" | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,7 +26,7 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  const handleSendCode = async (method: "email" | "phone") => {
+  const handleSendCode = async () => {
     if (!fullName.trim()) {
       toast({
         title: "Error",
@@ -38,7 +36,7 @@ const Auth = () => {
       return;
     }
 
-    if (method === "email" && !email.trim()) {
+    if (!email.trim()) {
       toast({
         title: "Error",
         description: "Please enter your email",
@@ -47,44 +45,23 @@ const Auth = () => {
       return;
     }
 
-    if (method === "phone" && !phone.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your phone number",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
-    setOtpMethod(method);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp(
-        method === "email" 
-          ? { 
-              email,
-              options: {
-                data: {
-                  full_name: fullName,
-                },
-              },
-            }
-          : { 
-              phone,
-              options: {
-                data: {
-                  full_name: fullName,
-                },
-              },
-            }
-      );
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
 
       if (error) throw error;
 
       toast({
         title: "Code sent!",
-        description: `Verification code sent to your ${method}`,
+        description: "Verification code sent to your email",
       });
       setStep("verify");
     } catch (error: any) {
@@ -111,11 +88,11 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp(
-        otpMethod === "email"
-          ? { email, token: otpCode, type: "email" }
-          : { phone, token: otpCode, type: "sms" }
-      );
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: "email",
+      });
 
       if (error) throw error;
 
@@ -164,32 +141,13 @@ const Auth = () => {
         />
       </div>
 
-      <div>
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          type="tel"
-          placeholder="+1 (555) 000-0000"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div className="space-y-3 pt-2">
+      <div className="pt-2">
         <Button 
-          onClick={() => handleSendCode("email")}
+          onClick={handleSendCode}
           className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
           disabled={loading || !fullName.trim() || !email.trim()}
         >
-          {loading && otpMethod === "email" ? "Sending..." : "Send Code to Email"}
-        </Button>
-        <Button 
-          onClick={() => handleSendCode("phone")}
-          className="w-full bg-gradient-to-r from-accent to-accent/80 hover:opacity-90 transition-opacity"
-          disabled={loading || !fullName.trim() || !phone.trim()}
-        >
-          {loading && otpMethod === "phone" ? "Sending..." : "Send Code to Text"}
+          {loading ? "Sending..." : "Send Verification Code"}
         </Button>
       </div>
     </div>
@@ -199,10 +157,10 @@ const Auth = () => {
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          We sent a 6-digit code to your {otpMethod}
+          We sent a 6-digit code to your email
         </p>
         <p className="text-sm font-medium">
-          {otpMethod === "email" ? email : phone}
+          {email}
         </p>
       </div>
 
@@ -236,7 +194,6 @@ const Auth = () => {
           onClick={() => {
             setStep("info");
             setOtpCode("");
-            setOtpMethod(null);
           }}
           variant="ghost"
           className="w-full"
