@@ -111,6 +111,45 @@ export type Database = {
           },
         ]
       }
+      partner_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          invitation_code: string | null
+          inviter_user_id: string
+          partner_email: string | null
+          partner_name: string
+          partner_phone: string | null
+          partner_user_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string | null
+          inviter_user_id: string
+          partner_email?: string | null
+          partner_name: string
+          partner_phone?: string | null
+          partner_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string | null
+          inviter_user_id?: string
+          partner_email?: string | null
+          partner_name?: string
+          partner_phone?: string | null
+          partner_user_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -118,7 +157,9 @@ export type Database = {
           id: string
           last_message_date: string | null
           messages_today: number | null
+          partner_email: string | null
           partner_name: string | null
+          partner_phone: string | null
           phone_number: string | null
           relationship_years: string | null
           subscription_tier: string | null
@@ -134,7 +175,9 @@ export type Database = {
           id?: string
           last_message_date?: string | null
           messages_today?: number | null
+          partner_email?: string | null
           partner_name?: string | null
+          partner_phone?: string | null
           phone_number?: string | null
           relationship_years?: string | null
           subscription_tier?: string | null
@@ -150,7 +193,9 @@ export type Database = {
           id?: string
           last_message_date?: string | null
           messages_today?: number | null
+          partner_email?: string | null
           partner_name?: string | null
+          partner_phone?: string | null
           phone_number?: string | null
           relationship_years?: string | null
           subscription_tier?: string | null

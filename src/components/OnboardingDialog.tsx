@@ -16,7 +16,7 @@ interface OnboardingDialogProps {
   userName: string;
 }
 
-type OnboardingStep = "engagement" | "wedding" | "relationship" | "tasks" | "complete";
+type OnboardingStep = "engagement" | "wedding" | "relationship" | "partner" | "tasks" | "complete";
 
 const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -24,6 +24,9 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
   const [engagementDate, setEngagementDate] = useState<Date>();
   const [weddingDate, setWeddingDate] = useState<Date>();
   const [relationshipYears, setRelationshipYears] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerPhone, setPartnerPhone] = useState("");
   const [completedTasks, setCompletedTasks] = useState("");
   const { toast } = useToast();
 
@@ -74,6 +77,9 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
           });
           return;
         }
+        setStep("partner");
+      } else if (step === "partner") {
+        // Partner is optional, can skip
         setStep("tasks");
       } else if (step === "tasks") {
         // Save all data
@@ -101,13 +107,37 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
 
     if (timelineError) throw timelineError;
 
-    // Update profile with relationship duration
+    // Update profile with relationship duration and partner info
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ relationship_years: relationshipYears })
+      .update({ 
+        relationship_years: relationshipYears,
+        partner_name: partnerName || null,
+        partner_email: partnerEmail || null,
+        partner_phone: partnerPhone || null
+      })
       .eq('user_id', userId);
 
     if (profileError) throw profileError;
+
+    // Send partner invitation if contact provided
+    if (partnerName && (partnerEmail || partnerPhone)) {
+      const { error: inviteError } = await supabase.functions.invoke('send-partner-invite', {
+        body: {
+          partnerName,
+          partnerEmail: partnerEmail || null,
+          partnerPhone: partnerPhone || null,
+        }
+      });
+
+      if (inviteError) {
+        console.error('Failed to send partner invitation:', inviteError);
+        toast({
+          title: "Partner invite pending",
+          description: "We'll send the invitation shortly",
+        });
+      }
+    }
 
     // Add completed tasks to checklist if provided
     if (completedTasks.trim()) {
@@ -214,6 +244,47 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
           </div>
         );
       
+      case "partner":
+        return (
+          <div className="space-y-4">
+            <p className="text-lg font-medium">Want to invite your partner? 💕</p>
+            <p className="text-sm text-muted-foreground">
+              They'll receive an OTP to join and help with planning (optional)
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="partnerName">Partner's Name</Label>
+                <Input
+                  id="partnerName"
+                  value={partnerName}
+                  onChange={(e) => setPartnerName(e.target.value)}
+                  placeholder="Their name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="partnerEmail">Email (optional)</Label>
+                <Input
+                  id="partnerEmail"
+                  type="email"
+                  value={partnerEmail}
+                  onChange={(e) => setPartnerEmail(e.target.value)}
+                  placeholder="partner@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="partnerPhone">Phone (optional)</Label>
+                <Input
+                  id="partnerPhone"
+                  type="tel"
+                  value={partnerPhone}
+                  onChange={(e) => setPartnerPhone(e.target.value)}
+                  placeholder="+1234567890"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
       case "tasks":
         return (
           <div className="space-y-4">
@@ -264,7 +335,7 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const steps: OnboardingStep[] = ["engagement", "wedding", "relationship", "tasks"];
+                  const steps: OnboardingStep[] = ["engagement", "wedding", "relationship", "partner", "tasks"];
                   const currentIndex = steps.indexOf(step);
                   if (currentIndex > 0) {
                     setStep(steps[currentIndex - 1]);
