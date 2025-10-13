@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Send, LayoutDashboard, CheckSquare, ArrowLeft, DollarSign, Mail, Sparkles } from "lucide-react";
+import logo from "@/assets/bride-buddy-logo-new.png";
 
 const BrideBuddyComplete = () => {
   // App state: 'new-user', 'verification-sent', 'onboarding', 'returning-user'
@@ -23,8 +24,7 @@ const BrideBuddyComplete = () => {
   const [spent] = useState(28450);
   const [weddingVibeEmojis] = useState(["💕", "🌸", "🌿", "🏡", "🦋"]);
 
-  const logoUrl =
-    "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
+  const logoUrl = logo;
 
   const suggestedPrompts = [
     { text: "Show me my progress", action: "dashboard" },
