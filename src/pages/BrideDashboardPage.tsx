@@ -107,15 +107,8 @@ export default function Dashboard({ onBackToChat }: DashboardProps) {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-purple-50 to-pink-50 pb-8">
-      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-        <button
-          onClick={onBackToChat}
-          className="hover:opacity-80 transition-opacity"
-        >
-          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
-        </button>
-        <span className="text-purple-600 font-semibold">Dashboard</span>
-        <div className="w-32"></div>
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-center sticky top-0 z-10">
+        <img src={logo} alt="Bride Buddy" className="w-24 h-24 object-contain" />
       </div>
 
       <div className="px-4 py-6 space-y-6">
