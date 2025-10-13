@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Send, LayoutDashboard, CheckSquare, ArrowLeft, DollarSign } from "lucide-react";
 import logo from "@/assets/bride-buddy-logo-ring.png";
 
@@ -6,6 +6,7 @@ const BrideBuddyReturningUser = () => {
   const [view, setView] = useState("chat"); // chat, dashboard, or planner
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [userName] = useState("Sarah"); // This would come from user database
   const [weddingDate] = useState(new Date("2026-06-20"));
   const [engagementDate] = useState(new Date("2025-01-15"));
@@ -234,93 +235,105 @@ const BrideBuddyReturningUser = () => {
     }, 1000);
   };
 
-  const ChatView = () => (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-        <button onClick={() => setView("chat")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
-        </button>
-        <button
-          onClick={() => setView("dashboard")}
-          className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
-        >
-          <LayoutDashboard className="text-white" size={20} />
-        </button>
-      </div>
+  const ChatView = () => {
+    useEffect(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, [messages.length]);
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
-            <div className="text-center space-y-3">
-              <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
-                Welcome back, {userName}! 💕
-              </h2>
+    return (
+      <div className="flex flex-col h-full bg-gray-50">
+        <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+          <button onClick={() => setView("chat")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
+          </button>
+          <button
+            onClick={() => setView("dashboard")}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
+          >
+            <LayoutDashboard className="text-white" size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
+              <div className="text-center space-y-3">
+                <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+                  Welcome back, {userName}! 💕
+                </h2>
+              </div>
+
+              <div className="w-full max-w-sm space-y-4">
+                <div className="bg-white rounded-2xl shadow-lg p-4">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Tell me where you want to start today, or click a suggested prompt below"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
+                    className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {suggestedPrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handlePromptClick(prompt)}
+                      className="w-full bg-white text-purple-400 py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm font-medium border-2 border-purple-100 hover:border-purple-300"
+                    >
+                      {prompt.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-
-            <div className="w-full max-w-sm space-y-4">
-              <div className="bg-white rounded-2xl shadow-lg p-4">
-                <input
-                  type="text"
-                  placeholder="Tell me where you want to start today, or click a suggested prompt below"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
-                />
+          ) : (
+            messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                    msg.type === "user"
+                      ? "bg-purple-300 text-white rounded-br-sm"
+                      : "bg-white text-gray-800 shadow-md rounded-bl-sm"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                </div>
               </div>
+            ))
+          )}
+        </div>
 
-              <div className="space-y-3">
-                {suggestedPrompts.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handlePromptClick(prompt)}
-                    className="w-full bg-white text-purple-400 py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm font-medium border-2 border-purple-100 hover:border-purple-300"
-                  >
-                    {prompt.text}
-                  </button>
-                ))}
-              </div>
+        {messages.length > 0 && (
+          <div className="bg-white border-t border-gray-200 p-4">
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Type a message..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
+                autoFocus
+              />
+              <button
+                onClick={() => handleSendMessage(inputValue)}
+                className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md"
+              >
+                <Send className="text-white" size={20} />
+              </button>
             </div>
           </div>
-        ) : (
-          messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                  msg.type === "user"
-                    ? "bg-purple-300 text-white rounded-br-sm"
-                    : "bg-white text-gray-800 shadow-md rounded-bl-sm"
-                }`}
-              >
-                <p className="text-sm whitespace-pre-line">{msg.text}</p>
-              </div>
-            </div>
-          ))
         )}
       </div>
-
-      {messages.length > 0 && (
-        <div className="bg-white border-t border-gray-200 p-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
-              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
-            />
-            <button
-              onClick={() => handleSendMessage(inputValue)}
-              className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md"
-            >
-              <Send className="text-white" size={20} />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   const DashboardView = () => {
     const daysUntil = getDaysUntilWedding();
