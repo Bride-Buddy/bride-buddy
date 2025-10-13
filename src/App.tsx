@@ -342,18 +342,10 @@ const BrideBuddyReturningUser = () => {
 
     return (
       <div className="h-full overflow-y-auto bg-gradient-to-b from-purple-100 to-blue-100">
-        <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-          <button
-            onClick={() => setView("chat")}
-            className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
-          >
-            <ArrowLeft className="text-white" size={20} />
+        <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-center shadow-md">
+          <button onClick={() => setView("chat")} className="hover:opacity-80 transition-opacity">
+            <img src={logo} alt="Bride Buddy" className="w-24 h-24 object-contain cursor-pointer" />
           </button>
-          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
-            <span className="text-white font-semibold">Dashboard</span>
-          </button>
-          <div className="w-9"></div>
         </div>
 
         <div className="p-6 space-y-6">
