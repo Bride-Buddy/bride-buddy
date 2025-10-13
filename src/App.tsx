@@ -1,8 +1,46 @@
 import React, { useState, useRef, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Send, LayoutDashboard, CheckSquare, ArrowLeft, DollarSign } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/bride-buddy-logo-ring.png";
 import Auth from "./pages/Auth";
+import { Toaster } from "@/components/ui/sonner";
+
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100">
+        <div className="text-purple-400 text-xl font-semibold">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const BrideBuddyReturningUser = () => {
   const [view, setView] = useState("chat"); // chat, dashboard, or planner
@@ -608,13 +646,23 @@ const BrideBuddyReturningUser = () => {
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Auth />} />
-        <Route path="/dashboard" element={<BrideBuddyReturningUser />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Auth />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <BrideBuddyReturningUser />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </>
   );
 };
 
