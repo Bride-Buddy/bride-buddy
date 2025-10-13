@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
+import { Resend } from "npm:resend";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,8 +8,10 @@ const corsHeaders = {
 };
 
 interface SendOtpRequest {
+  action: "send" | "verify";
   email: string;
-  fullName: string;
+  fullName?: string;
+  otpCode?: string;
 }
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -24,37 +26,137 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { email, fullName }: SendOtpRequest = await req.json();
+    const { action, email, fullName, otpCode }: SendOtpRequest = await req.json();
 
-    console.log("Processing OTP request for:", email);
+    // Handle OTP verification
+    if (action === "verify") {
+      console.log("Verifying OTP for:", email);
 
-    if (!email) {
-      throw new Error("Email is required");
-    }
+      if (!email || !otpCode) {
+        throw new Error("Email and OTP code are required for verification");
+      }
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // Check if OTP is valid
+      const { data: otpData, error: otpError } = await supabase
+        .from("email_otps")
+        .select("*")
+        .eq("email", email)
+        .eq("otp_code", otpCode)
+        .eq("verified", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
 
-    // Store OTP in database
-    const { error: dbError } = await supabase
-      .from("email_otps")
-      .insert({
+      if (otpError || !otpData) {
+        console.error("Invalid or expired OTP:", otpError);
+        throw new Error("Invalid or expired verification code");
+      }
+
+      // Mark OTP as verified
+      const { error: updateError } = await supabase
+        .from("email_otps")
+        .update({ verified: true })
+        .eq("id", otpData.id);
+
+      if (updateError) {
+        console.error("Error updating OTP:", updateError);
+        throw new Error("Failed to verify OTP");
+      }
+
+      // Check if user exists
+      const { data: { users }, error: userListError } = await supabase.auth.admin.listUsers();
+      
+      if (userListError) {
+        console.error("Error listing users:", userListError);
+        throw new Error("Failed to check user existence");
+      }
+
+      const existingUser = users.find(u => u.email === email);
+
+      let userId: string;
+
+      if (existingUser) {
+        // User exists, use their ID
+        userId = existingUser.id;
+        console.log("Existing user found:", userId);
+      } else {
+        // Create new user
+        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: {
+            full_name: otpData.full_name || fullName,
+          },
+        });
+
+        if (createError || !newUser.user) {
+          console.error("Error creating user:", createError);
+          throw new Error(`Failed to create user: ${createError?.message}`);
+        }
+
+        userId = newUser.user.id;
+        console.log("New user created:", userId);
+      }
+
+      // Generate session for the user
+      const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
         email,
-        otp_code: otpCode,
-        full_name: fullName,
       });
 
-    if (dbError) {
-      console.error("Error storing OTP:", dbError);
-      throw new Error(`Failed to store OTP: ${dbError.message}`);
+      if (sessionError || !sessionData) {
+        console.error("Error generating session:", sessionError);
+        throw new Error("Failed to generate session");
+      }
+
+      console.log("OTP verified and session created for:", email);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          session: sessionData,
+          message: "OTP verified successfully"
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
-    // Send email with OTP
-    const emailResponse = await resend.emails.send({
-      from: "Bride Buddy <onboarding@resend.dev>",
-      to: [email],
-      subject: "Your Bride Buddy Verification Code",
-      html: `
+    // Handle OTP sending (original flow)
+    if (action === "send") {
+
+      console.log("Processing OTP send request for:", email);
+
+      if (!email) {
+        throw new Error("Email is required");
+      }
+
+      // Generate 6-digit OTP
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Store OTP in database
+      const { error: dbError } = await supabase
+        .from("email_otps")
+        .insert({
+          email,
+          otp_code: otpCode,
+          full_name: fullName,
+        });
+
+      if (dbError) {
+        console.error("Error storing OTP:", dbError);
+        throw new Error(`Failed to store OTP: ${dbError.message}`);
+      }
+
+      // Send email with OTP
+      const emailResponse = await resend.emails.send({
+        from: "Bride Buddy <onboarding@resend.dev>",
+        to: [email],
+        subject: "Your Bride Buddy Verification Code",
+        html: `
         <!DOCTYPE html>
         <html>
           <head>
@@ -113,25 +215,28 @@ serve(async (req: Request) => {
           </body>
         </html>
       `,
-    });
+      });
 
-    if (emailResponse.error) {
-      console.error("Error sending email:", emailResponse.error);
-      throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+      if (emailResponse.error) {
+        console.error("Error sending email:", emailResponse.error);
+        throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+      }
+
+      console.log("OTP sent successfully to:", email);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: "OTP sent successfully"
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
-    console.log("OTP sent successfully to:", email);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: "OTP sent successfully"
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    throw new Error("Invalid action specified");
   } catch (error: any) {
     console.error("Error in send-email-otp function:", error);
     return new Response(

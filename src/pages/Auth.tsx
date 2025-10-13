@@ -50,6 +50,7 @@ const Auth = () => {
     try {
       const { error } = await supabase.functions.invoke("send-email-otp", {
         body: {
+          action: "send",
           email,
           fullName,
         },
@@ -75,7 +76,7 @@ const Auth = () => {
   };
 
   const handleVerifyCode = async () => {
-    if (otpCode.length !== 6) {
+    if (!otpCode || otpCode.length !== 6) {
       toast({
         title: "Error",
         description: "Please enter the 6-digit code",
@@ -87,59 +88,44 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Verify OTP from our database
-      const { data: otpData, error: otpError } = await supabase
-        .from("email_otps")
-        .select("*")
-        .eq("email", email)
-        .eq("otp_code", otpCode)
-        .eq("verified", false)
-        .gt("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (otpError) throw otpError;
-
-      if (!otpData) {
-        throw new Error("Invalid or expired verification code");
-      }
-
-      // Mark OTP as verified
-      await supabase
-        .from("email_otps")
-        .update({ verified: true })
-        .eq("id", otpData.id);
-
-      // Sign in or sign up the user with Supabase Auth using email OTP
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          data: {
-            full_name: otpData.full_name || fullName,
-          },
-          shouldCreateUser: true,
+      // Verify OTP via Edge function
+      const { data, error } = await supabase.functions.invoke("send-email-otp", {
+        body: {
+          action: "verify",
+          email,
+          otpCode,
+          fullName,
         },
       });
 
-      if (signInError) throw signInError;
+      if (error) {
+        throw new Error(error.message || "Failed to verify code");
+      }
 
-      // Get the session to confirm login
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) throw sessionError;
+      if (data?.session) {
+        // Set the session from the Edge function response
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.properties.access_token,
+          refresh_token: data.session.properties.refresh_token,
+        });
 
-      toast({
-        title: "Welcome to Bride Buddy! 💍",
-        description: "Your account is ready",
-      });
-      
-      navigate("/");
+        if (sessionError) {
+          throw new Error("Failed to establish session");
+        }
+
+        toast({
+          title: "Welcome to Bride Buddy! 💍",
+          description: "Your account is ready",
+        });
+        navigate("/");
+      } else {
+        throw new Error("Invalid verification response");
+      }
     } catch (error: any) {
       console.error("Error verifying code:", error);
       toast({
         title: "Error",
-        description: error.message || "Invalid verification code",
+        description: error.message || "Failed to verify code",
         variant: "destructive",
       });
     } finally {
