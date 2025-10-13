@@ -338,7 +338,7 @@ const BrideBuddyReturningUser = () => {
             <ArrowLeft className="text-white" size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Bride Buddy" className="w-7 h-7 object-contain" />
+            <img src={logo} alt="Bride Buddy" className="w-10 h-10 object-contain" />
             <span className="text-white font-semibold">Dashboard</span>
           </div>
           <div className="w-9"></div>
@@ -502,7 +502,7 @@ const BrideBuddyReturningUser = () => {
             <ArrowLeft className="text-white" size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Bride Buddy" className="w-7 h-7 object-contain" />
+            <img src={logo} alt="Bride Buddy" className="w-10 h-10 object-contain" />
             <span className="text-white font-semibold">Wedding Planner</span>
           </div>
           <div className="w-9"></div>
