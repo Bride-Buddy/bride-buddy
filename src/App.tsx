@@ -237,7 +237,7 @@ const BrideBuddyReturningUser = () => {
   const ChatView = () => (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-        <button onClick={() => setView("chat")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <button onClick={() => setView("dashboard")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
         </button>
         <button
@@ -336,7 +336,7 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <button onClick={() => setView("dashboard")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
             <span className="text-white font-semibold">Dashboard</span>
           </button>
@@ -500,7 +500,7 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <button onClick={() => setView("dashboard")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
             <span className="text-white font-semibold">Wedding Planner</span>
           </button>

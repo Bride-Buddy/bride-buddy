@@ -108,7 +108,7 @@ export default function App() {
     <div className="h-screen w-full bg-white flex flex-col">
       {/* Header with Logo and Dashboard Button */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <button onClick={() => window.location.href = "/"}>
+        <button onClick={() => window.location.href = "/bride-dashboard"}>
           <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer hover:opacity-80 transition-opacity" />
         </button>
         <button
