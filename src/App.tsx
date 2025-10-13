@@ -237,9 +237,9 @@ const BrideBuddyReturningUser = () => {
   const ChatView = () => (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain" />
-        </div>
+        <button onClick={() => setView("chat")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
+        </button>
         <button
           onClick={() => setView("dashboard")}
           className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
@@ -336,10 +336,10 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain" />
+          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
             <span className="text-white font-semibold">Dashboard</span>
-          </div>
+          </button>
           <div className="w-9"></div>
         </div>
 
@@ -500,10 +500,10 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain" />
+          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
             <span className="text-white font-semibold">Wedding Planner</span>
-          </div>
+          </button>
           <div className="w-9"></div>
         </div>
 
