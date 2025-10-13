@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/bride-buddy-logo.png";
+import logo from "@/assets/bride-buddy-logo-ring.png";
 
 const Auth = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signup");

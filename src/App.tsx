@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Send, LayoutDashboard, CheckSquare, ArrowLeft, DollarSign } from "lucide-react";
+import logo from "@/assets/bride-buddy-logo-ring.png";
 
 const BrideBuddyReturningUser = () => {
   const [view, setView] = useState("chat"); // chat, dashboard, or planner
@@ -11,9 +12,6 @@ const BrideBuddyReturningUser = () => {
   const [lastTopic] = useState("bridesmaid dresses"); // Last thing they were discussing
   const [budget] = useState(50000); // Total budget
   const [spent] = useState(28450); // Total spent so far
-
-  const logoUrl =
-    "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
 
   const suggestedPrompts = [
     { text: "Show me my progress", action: "dashboard" },
@@ -240,7 +238,7 @@ const BrideBuddyReturningUser = () => {
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Bride Buddy" className="w-10 h-10 rounded-full bg-white p-1" />
+          <img src={logo} alt="Bride Buddy" className="w-10 h-10 object-contain bg-white rounded-full p-1" />
           <span className="text-white font-semibold text-sm">Bride Buddy</span>
         </div>
         <button
@@ -339,7 +337,10 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <span className="text-white font-semibold">Dashboard</span>
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="Bride Buddy" className="w-7 h-7 object-contain" />
+            <span className="text-white font-semibold">Dashboard</span>
+          </div>
           <div className="w-9"></div>
         </div>
 
@@ -500,7 +501,10 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <span className="text-white font-semibold">Wedding Planner</span>
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="Bride Buddy" className="w-7 h-7 object-contain" />
+            <span className="text-white font-semibold">Wedding Planner</span>
+          </div>
           <div className="w-9"></div>
         </div>
 
