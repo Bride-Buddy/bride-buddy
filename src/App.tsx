@@ -125,15 +125,15 @@ const BrideBuddyReturningUser = () => {
 
   const getDaysUntilWedding = () => {
     const today = new Date();
-    const diffTime = weddingDate - today;
+    const diffTime = weddingDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
   const getTimelineProgress = () => {
     const today = new Date();
-    const totalTime = weddingDate - engagementDate;
-    const elapsed = today - engagementDate;
+    const totalTime = weddingDate.getTime() - engagementDate.getTime();
+    const elapsed = today.getTime() - engagementDate.getTime();
     return Math.min(Math.max((elapsed / totalTime) * 100, 0), 100);
   };
 
@@ -156,9 +156,9 @@ const BrideBuddyReturningUser = () => {
 
   const getTimelineMarkers = () => {
     const today = new Date();
-    const totalTime = weddingDate - engagementDate;
+    const totalTime = weddingDate.getTime() - engagementDate.getTime();
     const totalDays = Math.ceil(totalTime / (1000 * 60 * 60 * 24));
-    const elapsed = today - engagementDate;
+    const elapsed = today.getTime() - engagementDate.getTime();
     const currentDay = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
 
     const markers = [];
