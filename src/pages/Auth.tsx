@@ -48,12 +48,10 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          data: {
-            full_name: fullName,
-          },
+      const { error } = await supabase.functions.invoke("send-email-otp", {
+        body: {
+          email,
+          fullName,
         },
       });
 
@@ -61,13 +59,14 @@ const Auth = () => {
 
       toast({
         title: "Code sent!",
-        description: "Verification code sent to your email",
+        description: "Check your email for the 6-digit code",
       });
       setStep("verify");
     } catch (error: any) {
+      console.error("Error sending code:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to send verification code",
         variant: "destructive",
       });
     } finally {
@@ -88,25 +87,59 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      // Verify OTP from our database
+      const { data: otpData, error: otpError } = await supabase
+        .from("email_otps")
+        .select("*")
+        .eq("email", email)
+        .eq("otp_code", otpCode)
+        .eq("verified", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (otpError) throw otpError;
+
+      if (!otpData) {
+        throw new Error("Invalid or expired verification code");
+      }
+
+      // Mark OTP as verified
+      await supabase
+        .from("email_otps")
+        .update({ verified: true })
+        .eq("id", otpData.id);
+
+      // Sign in or sign up the user with Supabase Auth using email OTP
+      const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
-        token: otpCode,
-        type: "email",
+        options: {
+          data: {
+            full_name: otpData.full_name || fullName,
+          },
+          shouldCreateUser: true,
+        },
       });
 
-      if (error) throw error;
+      if (signInError) throw signInError;
 
-      if (data.user) {
-        toast({
-          title: "Welcome to Bride Buddy! 💍",
-          description: "Your account is ready",
-        });
-        navigate("/");
-      }
+      // Get the session to confirm login
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+
+      toast({
+        title: "Welcome to Bride Buddy! 💍",
+        description: "Your account is ready",
+      });
+      
+      navigate("/");
     } catch (error: any) {
+      console.error("Error verifying code:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Invalid verification code",
         variant: "destructive",
       });
     } finally {
