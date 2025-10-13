@@ -253,7 +253,7 @@ const Auth = () => {
       <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-6">
-            <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
+            <img src={logo} alt="Bride Buddy Logo" className="w-64 h-64" />
           </div>
         </div>
 
