@@ -48,15 +48,15 @@ const BrideBuddyApp = () => {
 
   const getDaysUntilWedding = () => {
     const today = new Date();
-    const diffTime = weddingDate - today;
+    const diffTime = weddingDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
   const getTimelineProgress = () => {
     const today = new Date();
-    const totalTime = weddingDate - engagementDate;
-    const elapsed = today - engagementDate;
+    const totalTime = weddingDate.getTime() - engagementDate.getTime();
+    const elapsed = today.getTime() - engagementDate.getTime();
     return Math.min(Math.max((elapsed / totalTime) * 100, 0), 100);
   };
 
