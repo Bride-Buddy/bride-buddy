@@ -605,16 +605,3 @@ const BrideBuddyReturningUser = () => {
 };
 
 export default BrideBuddyReturningUser;
-import Dashboard from "./BrideDashboardPage";
-
-// Then in your component:
-<BrideDashboardPage
-  userName="Sarah"
-  weddingDate={new Date("2026-06-20")}
-  engagementDate={new Date("2025-01-15")}
-  budget={50000}
-  spent={28450}
-  weddingVibeEmojis={["💕", "🌸", "🌿", "🏡", "🦋"]}
-  plannerCategories={plannerCategories}
-  onNavigate={(view) => setView(view)}
-/>;
