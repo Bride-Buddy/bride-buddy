@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "@/assets/bride-buddy-logo-ring.png";
 
 interface DashboardProps {
   onBackToChat?: () => void;
@@ -107,18 +108,14 @@ export default function Dashboard({ onBackToChat }: DashboardProps) {
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-purple-50 to-pink-50 pb-8">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-            <span className="text-lg">💍</span>
-          </div>
-          <span className="text-purple-600">Dashboard</span>
-        </div>
         <button
           onClick={onBackToChat}
-          className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors text-xl"
+          className="hover:opacity-80 transition-opacity"
         >
-          💬
+          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
         </button>
+        <span className="text-purple-600 font-semibold">Dashboard</span>
+        <div className="w-32"></div>
       </div>
 
       <div className="px-4 py-6 space-y-6">
