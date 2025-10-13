@@ -160,8 +160,9 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
   const handleComplete = () => {
     setOpen(false);
     toast({
-      title: "Welcome aboard! 🎉",
-      description: "Your wedding planning journey starts now. Let's make your day perfect!",
+      title: `Welcome, ${userName}! 🎉`,
+      description: "Your personalized account is ready! Everything is saved to YOUR private database - your tasks, budget, vendors, and progress. This is YOUR journey! 💍✨",
+      duration: 6000,
     });
   };
 
@@ -311,7 +312,8 @@ const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
             <div className="text-6xl mb-4">🎉</div>
             <p className="text-xl font-bold">All set, {userName}!</p>
             <p className="text-muted-foreground">
-              Your personal Bride Buddy account is ready. Everything you add will be saved so we can pick up right where you leave off.
+              Your personal account is ready! Everything is saved to YOUR database - from your checklist to vendors. 
+              Your progress, your data, your journey. Let's make your wedding day perfect! 💍✨
             </p>
           </div>
         );

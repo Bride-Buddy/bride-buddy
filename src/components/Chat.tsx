@@ -8,6 +8,7 @@ import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
 import { TrialBanner } from "./TrialBanner";
+import { PersonalizedWelcome } from "./PersonalizedWelcome";
 
 interface Message {
   id: string;
@@ -253,6 +254,7 @@ const Chat = ({ userId }: ChatProps) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
+      <PersonalizedWelcome userId={userId} />
       <TrialBanner 
         trialStartDate={trialStartDate} 
         subscriptionTier={subscriptionTier}
@@ -267,10 +269,10 @@ const Chat = ({ userId }: ChatProps) => {
             {isReturningUser && userName ? (
               <>
                 <h2 className="text-2xl font-bold mb-2">
-                  Welcome back, {userName}! 🚗💍
+                  Hey {userName}! 💕 Ready to keep planning?
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Your wedding adventure continues. What would you like to do today?
+                  I've saved all your progress. Let's pick up right where we left off! ✨
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button

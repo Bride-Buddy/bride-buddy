@@ -140,10 +140,16 @@ const VendorTracker = ({ userId }: VendorTrackerProps) => {
     }
 
     if (!vendor.paid) {
+      const remainingBudget = totalBudget - (paidAmount + (vendor.amount || 0));
       toast({
-        title: `Payment marked as complete! 💰`,
-        description: `${vendor.name} - ${vendor.service} has been paid`,
+        title: `💰 Payment recorded for ${vendor.name}!`,
+        description: `Great job! You're crushing this budget management! ${remainingBudget > 0 ? `$${remainingBudget.toLocaleString()} remaining` : 'All paid up! 🎉'}`,
         duration: 4000,
+      });
+    } else {
+      toast({
+        title: "Payment unmarked",
+        description: "Status updated ✨",
       });
     }
 

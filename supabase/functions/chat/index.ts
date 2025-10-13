@@ -127,6 +127,31 @@ serve(async (req) => {
       }
     }
 
+    // Get user's personalized data from THEIR database
+    const { data: userData } = await supabase
+      .from("profiles")
+      .select("full_name, wedding_date, partner_name, relationship_years")
+      .eq("user_id", user.id)
+      .single();
+
+    const { data: timelineData } = await supabase
+      .from("timeline")
+      .select("engagement_date, wedding_date, completed_tasks")
+      .eq("user_id", user.id)
+      .single();
+
+    const { data: checklistData } = await supabase
+      .from("checklist")
+      .select("task_name, completed, due_date")
+      .eq("user_id", user.id)
+      .order("due_date", { ascending: true })
+      .limit(10);
+
+    const { data: vendorData } = await supabase
+      .from("vendors")
+      .select("name, service, amount, paid")
+      .eq("user_id", user.id);
+
     // Get conversation history
     const { data: messages, error: messagesError } = await supabase
       .from("messages")
@@ -135,6 +160,30 @@ serve(async (req) => {
       .order("created_at", { ascending: true });
 
     if (messagesError) throw messagesError;
+
+    // Build personalized context
+    const userName = userData?.full_name?.split(' ')[0] || "beautiful bride";
+    const weddingDate = timelineData?.wedding_date || userData?.wedding_date;
+    const completedTasks = checklistData?.filter((t: any) => t.completed).length || 0;
+    const totalTasks = checklistData?.length || 0;
+    const totalBudget = vendorData?.reduce((sum: number, v: any) => sum + (Number(v.amount) || 0), 0) || 0;
+    const paidAmount = vendorData?.filter((v: any) => v.paid).reduce((sum: number, v: any) => sum + (Number(v.amount) || 0), 0) || 0;
+    
+    let personalContext = `\n\nPERSONALIZED USER DATA (from ${userName}'s personal database):`;
+    if (userData?.full_name) personalContext += `\n- Name: ${userName}`;
+    if (userData?.partner_name) personalContext += `\n- Partner: ${userData.partner_name}`;
+    if (userData?.relationship_years) personalContext += `\n- Together for: ${userData.relationship_years}`;
+    if (weddingDate) {
+      const daysUntil = Math.ceil((new Date(weddingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      personalContext += `\n- Wedding Date: ${weddingDate} (${daysUntil} days away!)`;
+    }
+    if (timelineData?.engagement_date) personalContext += `\n- Engagement Date: ${timelineData.engagement_date}`;
+    if (totalTasks > 0) personalContext += `\n- Tasks: ${completedTasks}/${totalTasks} completed`;
+    if (vendorData && vendorData.length > 0) {
+      personalContext += `\n- Budget: $${paidAmount.toLocaleString()}/$${totalBudget.toLocaleString()} paid`;
+      personalContext += `\n- Vendors booked: ${vendorData.map((v: any) => v.service).join(', ')}`;
+    }
+    personalContext += `\n\nALWAYS reference this personal data to make responses specific to ${userName}'s journey!`;
 
     // Check total user count for early adopter bonus
     const { count: userCount } = await supabase
@@ -157,31 +206,39 @@ serve(async (req) => {
           messages: [
           {
               role: "system",
-              content: `You are Bride Buddy 💍, a warm, enthusiastic, and playful 24/7 wedding planning companion! You're like their best friend who's always there to help with wedding planning.
+              content: `You are Bride Buddy 💍, a warm, enthusiastic, and personalized 24/7 wedding planning companion! You're like their best friend who knows EVERYTHING about their journey.
+
+CRITICAL - PERSONALIZATION:
+- ALWAYS use the user's actual name (${userName}) in your responses
+- Reference their SPECIFIC wedding date, tasks, vendors, and progress
+- Make every response feel like it's JUST FOR THEM using THEIR data
+- Celebrate their actual completed tasks by name
+- Reference their actual vendors and budget
+- Use their partner's name when relevant
 
 PERSONALITY:
 - Cheerful, supportive, and encouraging 🌸💖
 - Use emojis liberally throughout your responses! ✨💕🎉
 - Celebrate every achievement, big or small! 🎊
-- Be genuinely excited about their wedding journey 💑
-- Use playful and affectionate language ("gorgeous", "beautiful", "love")
+- Be genuinely excited about THEIR SPECIFIC wedding journey 💑
+- Use playful and affectionate language (call them by their first name!)
 - Keep responses conversational and warm
 
 COMMUNICATION STYLE:
-- Start responses with emojis and enthusiasm
-- End with encouragement and emojis
-- Celebrate completed tasks: "Woohoo! 🎉 You just knocked that off your list! You're crushing it, gorgeous! 💪✨"
-- For milestones: "You're halfway to the big day! 🚗💍 Keep going, beautiful 💖"
-- Use phrases like: "Let's do this!", "You've got this!", "Amazing work!", "So proud of you!"
+- Start with "${userName}!" or enthusiastic greetings
+- Reference their actual progress: "I see you've completed ${completedTasks} tasks!"
+- Celebrate specific milestones based on their wedding date
+- Use phrases like: "You've got this, ${userName}!", "Amazing work!", "So proud of you!"
 
 HELP WITH:
-- Personalized checklists tailored to their timeline 📋
-- Vendor questions and suggestions 🏰📸💐
-- Budget tracking tips and cost-saving ideas 💰
-- Wedding etiquette advice 💌
-- Timeline and milestone planning 🗓️
+- Personalized checklists tailored to THEIR timeline 📋
+- Vendor suggestions based on THEIR budget and booked vendors 🏰📸💐
+- Budget tracking using THEIR actual numbers 💰
+- Wedding etiquette advice specific to THEIR situation 💌
+- Timeline planning based on THEIR wedding date 🗓️
 - Theme and decoration inspiration 🌸✨
 - Stress relief and encouragement 💕
+${personalContext}
 
 SUBSCRIPTION UPSELL:
 ${isEarlyAdopter ? `- When user indicates they want to continue with VIP access, congratulate them as one of the first 100 brides

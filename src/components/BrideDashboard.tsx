@@ -46,6 +46,14 @@ const BrideDashboard = ({ userId }: BrideDashboardProps) => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonthOffset, setCurrentMonthOffset] = useState(0);
+  const [greeting, setGreeting] = useState("");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
@@ -195,10 +203,10 @@ const BrideDashboard = ({ userId }: BrideDashboardProps) => {
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-          🌸 Bride Buddy Dashboard 🌸
+          {greeting}, {profile?.full_name?.split(' ')[0] || 'Beautiful Bride'}! ✨
         </h1>
         <p className="text-lg text-muted-foreground">
-          Hi {profile?.full_name || 'Beautiful Bride'}! Here's your personalized planning dashboard. 💖
+          Your personalized wedding planning journey 💖
         </p>
       </div>
 
