@@ -1,178 +1,156 @@
-// ChatbotDashboard.tsx — Bride Buddy Pastel Restyle 💍
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { LayoutGrid } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { LayoutDashboard, Send } from "lucide-react";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import logo from "figma:asset/8e7d24f90c7824b37b31f61eb58d9bf8ce395eaa.png";
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
-  fromAI: boolean;
+  sender: "user" | "assistant";
 }
 
-const ChatbotDashboard = () => {
-  const navigate = useNavigate();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isChatStarted, setIsChatStarted] = useState(false);
-  const [input, setInput] = useState("");
+export default function App() {
+  const [isChatActive, setIsChatActive] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
 
-  const suggestedPrompts = [
-    {
-      text: "View My Dashboard",
-      action: () => navigate("/bride-dashboard"),
-    },
-    {
-      text: "Pick up where we left off",
-      action: () =>
-        setMessages((prev) => [
-          ...prev,
-          { id: prev.length + 1, text: "Welcome back 💕 Let’s continue from where we stopped.", fromAI: true },
-        ]),
-    },
-    {
-      text: "I need to vent",
-      action: () =>
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: prev.length + 1,
-            text: "It’s okay to vent. Take a deep breath 💗 I’m here to listen, no judgment.",
-            fromAI: true,
-          },
-        ]),
-    },
-  ];
+  const handleSendMessage = (text: string) => {
+    if (!text.trim()) return;
 
-  const startChat = (action?: () => void) => {
-    setIsChatStarted(true);
-    if (action) action();
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: text,
+      sender: "user",
+    };
+
+    setMessages([...messages, newMessage]);
+    setInputValue("");
+    setIsChatActive(true);
+
+    // Simulate assistant response
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm here to help! How can I assist you with your wedding planning today?",
+        sender: "assistant",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    }, 1000);
   };
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
-
-    if (!isChatStarted) setIsChatStarted(true);
-
-    setMessages((prev) => [
-      ...prev,
-      { id: prev.length + 1, text: input, fromAI: false },
-      {
-        id: prev.length + 2,
-        text: "Thank you for sharing 💬 Here’s a little guidance from me...",
-        fromAI: true,
-      },
-    ]);
-    setInput("");
+  const handlePromptClick = (prompt: string) => {
+    handleSendMessage(prompt);
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isChatStarted]);
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendMessage(inputValue);
+  };
 
-  // === Initial landing screen ===
-  if (!isChatStarted) {
+  if (!isChatActive) {
     return (
-      <div className="flex flex-col h-screen bg-white items-center justify-between p-6 font-[Poppins]">
-        {/* Logo + tagline */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <img
-            src="/Contemporary Bride Buddy Logo with Pastel Colors.png"
-            alt="Bride Buddy Logo"
-            className="h-40 object-contain mb-4 drop-shadow-sm"
-          />
-          <p className="text-[#6B6B83] text-lg italic">Your calm, caring wedding companion 💍</p>
+      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col px-6">
+        {/* Logo Section - Top 1/3 */}
+        <div className="flex items-center justify-center" style={{ height: "33.33%" }}>
+          <img src={logo} alt="Bride Buddy" className="w-64 h-64 object-contain" />
         </div>
 
-        {/* Input + prompts */}
-        <div className="w-full max-w-md flex flex-col gap-4 items-center mb-8">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-            placeholder="Type a message..."
-            className="w-full border border-[#D4E1F4] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#AFCBFF]"
-          />
-          <button
-            onClick={handleSendMessage}
-            className="w-full bg-[#AFCBFF] text-gray-800 px-4 py-3 rounded-xl hover:bg-[#91B4F2] transition font-semibold"
-          >
-            Send
-          </button>
+        {/* Input and Prompts Section - Middle */}
+        <div className="flex-1 flex flex-col justify-center gap-6 pb-20">
+          <form onSubmit={handleInputSubmit} className="relative">
+            <Input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="✨"
+              className="w-full h-14 px-6 pr-14 rounded-full border-2 border-purple-200 focus:border-purple-400 transition-colors"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center transition-colors"
+            >
+              <Send className="w-5 h-5 text-white" />
+            </button>
+          </form>
 
-          <div className="flex flex-col gap-2 w-full mt-4">
-            {suggestedPrompts.map((prompt) => (
-              <button
-                key={prompt.text}
-                onClick={() => startChat(prompt.action)}
-                className="w-full bg-[#C9C7F7] text-gray-800 py-2 rounded-xl hover:bg-[#B5B3F2] transition font-medium"
-              >
-                {prompt.text}
-              </button>
-            ))}
+          {/* Suggested Prompts */}
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() => handlePromptClick("see my progress")}
+              variant="outline"
+              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
+            >
+              see my progress
+            </Button>
+            <Button
+              onClick={() => handlePromptClick("pick up where we left off")}
+              variant="outline"
+              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
+            >
+              pick up where we left off
+            </Button>
+            <Button
+              onClick={() => handlePromptClick("I just need to vent")}
+              variant="outline"
+              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
+            >
+              I just need to vent
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  // === Chat interface ===
   return (
-    <div className="chatbot-dashboard relative flex flex-col h-screen bg-white font-[Poppins]">
-      {/* Top bar */}
-      <div className="flex justify-between items-center p-4 bg-[#EAF2FF] shadow-sm">
-        <img
-          src="/Contemporary Bride Buddy Logo with Pastel Colors.png"
-          alt="Bride Buddy Logo"
-          className="h-8 w-auto"
-        />
+    <div className="h-screen w-full bg-white flex flex-col">
+      {/* Header with Logo and Dashboard Button */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <img src={logo} alt="Bride Buddy" className="w-12 h-12 object-contain" />
         <button
-          onClick={() => navigate("/bride-dashboard")}
-          className="bg-[#AFCBFF] text-white p-2 rounded-full shadow hover:bg-[#91B4F2] transition"
-          aria-label="Open Dashboard"
+          onClick={() => (window.location.href = "/dashboard")}
+          className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors"
         >
-          <LayoutGrid size={20} />
+          <LayoutDashboard className="w-5 h-5 text-purple-600" />
         </button>
       </div>
 
-      {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gradient-to-b from-[#FFFFFF] to-[#F8F9FF]">
-        {messages.map((msg) => (
-          <motion.div
-            key={msg.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`p-3 rounded-2xl max-w-[75%] text-sm leading-relaxed ${
-              msg.fromAI ? "bg-[#EAF2FF] text-gray-700 self-start" : "bg-[#AFCBFF] text-white self-end"
-            }`}
-          >
-            {msg.text}
-          </motion.div>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        {messages.map((message) => (
+          <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              className={`max-w-[75%] px-4 py-3 rounded-2xl ${
+                message.sender === "user"
+                  ? "bg-purple-500 text-white rounded-br-sm"
+                  : "bg-gray-100 text-gray-800 rounded-bl-sm"
+              }`}
+            >
+              {message.text}
+            </div>
+          </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input bar */}
-      <div className="p-4 bg-[#F4F6FB] flex gap-2 items-center border-t border-[#E0E7F5]">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-          placeholder="Type a message..."
-          className="flex-1 border border-[#D4E1F4] rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AFCBFF]"
-        />
-        <button
-          onClick={handleSendMessage}
-          className="bg-[#AFCBFF] text-gray-800 px-4 py-2 rounded-xl hover:bg-[#91B4F2] transition font-semibold"
-        >
-          Send
-        </button>
+      {/* Input Area */}
+      <div className="border-t border-gray-200 px-4 py-4">
+        <form onSubmit={handleInputSubmit} className="relative">
+          <Input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Type a message..."
+            className="w-full h-12 px-4 pr-12 rounded-full border-2 border-gray-200 focus:border-purple-400 transition-colors"
+          />
+          <button
+            type="submit"
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center transition-colors"
+          >
+            <Send className="w-4 h-4 text-white" />
+          </button>
+        </form>
       </div>
     </div>
   );
-};
-
-export default ChatbotDashboard;
+}
