@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +8,6 @@ import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
 import { TrialBanner } from "./TrialBanner";
-import BrideDashboard from "./BrideDashboard";
 
 interface Message {
   id: string;
@@ -27,13 +27,14 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "main" | null>(null);
+  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null>(null);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
   const [showEarlyAdopterOffer, setShowEarlyAdopterOffer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -233,8 +234,10 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "main") => {
-    if (view) {
+  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard") => {
+    if (view === "dashboard") {
+      navigate("/dashboard");
+    } else if (view) {
       setDashboardView(view);
     } else {
       setInput(action);
@@ -255,11 +258,7 @@ const Chat = ({ userId }: ChatProps) => {
         subscriptionTier={subscriptionTier}
         onUpgrade={handleUpgrade}
       />
-      {dashboardView === "main" ? (
-        <BrideDashboard userId={userId} />
-      ) : (
-        <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
-      )}
+      <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
       
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
@@ -275,11 +274,11 @@ const Chat = ({ userId }: ChatProps) => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard", "main")}
+                    onClick={() => handleQuickReply("Show me my dashboard", "dashboard")}
                     variant="default"
                     className="hover:bg-primary/90"
                   >
-                    🌸 Bride Dashboard
+                    🌸 View Dashboard
                   </Button>
                   <Button
                     onClick={() => handleQuickReply("Show me my dashboard", "overview")}
