@@ -1,6 +1,6 @@
 // ChatbotDashboard.jsx
 import { useNavigate } from "react-router-dom";
-import { FiGrid } from "react-icons/fi"; // top-right icon
+import { LayoutGrid } from "lucide-react";
 
 const ChatbotDashboard = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const ChatbotDashboard = () => {
           className="text-gray-700 hover:text-blue-500 focus:outline-none"
           aria-label="Open Bride Dashboard"
         >
-          <FiGrid size={24} />
+          <LayoutGrid size={24} />
         </button>
       </div>
 
