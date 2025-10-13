@@ -238,7 +238,7 @@ const BrideBuddyReturningUser = () => {
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain bg-white rounded-full p-1" />
+          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain" />
           <span className="text-white font-semibold text-sm">Bride Buddy</span>
         </div>
         <button
