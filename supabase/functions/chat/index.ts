@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,19 +8,77 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const inputSchema = z.object({
+  sessionId: z.string().uuid(),
+  message: z.string().min(1).max(5000),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { sessionId, message } = await req.json();
+    // Validate input
+    const body = await req.json();
+    const parsed = inputSchema.safeParse(body);
+    
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { sessionId, message } = parsed.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
+    // Verify user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from JWT token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify session ownership
+    const { data: session, error: sessionError } = await supabase
+      .from("chat_sessions")
+      .select("user_id")
+      .eq("id", sessionId)
+      .single();
+
+    if (sessionError || !session || session.user_id !== user.id) {
+      return new Response(JSON.stringify({ 
+        error: 'Forbidden' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Get conversation history
     const { data: messages, error: messagesError } = await supabase
