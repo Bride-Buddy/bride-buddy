@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/bride-buddy-logo.png";
 
 const Auth = () => {
-  const [step, setStep] = useState<"email" | "signup" | "sent">("email");
+  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [step, setStep] = useState<"form" | "sent">("form");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,19 +26,14 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  // Step 1: handle email submission
-  const handleEmailSubmit = async () => {
+  // Send magic link
+  const handleSendMagicLink = async () => {
     if (!email.trim()) {
       toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
       return;
     }
-    // Move to signup step to collect name
-    setStep("signup");
-  };
 
-  // Step 2: send magic link
-  const handleSendMagicLink = async () => {
-    if (!fullName.trim()) {
+    if (mode === "signup" && !fullName.trim()) {
       toast({ title: "Error", description: "Please enter your full name", variant: "destructive" });
       return;
     }
@@ -50,7 +46,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          data: { full_name: fullName },
+          data: mode === "signup" ? { full_name: fullName } : undefined,
           emailRedirectTo: redirectUrl,
         },
       });
@@ -70,9 +66,26 @@ const Auth = () => {
   };
 
 
-  // Render UI for each step
-  const renderEmailStep = () => (
+
+  // Render form based on mode
+  const renderFormStep = () => (
     <div className="space-y-4">
+      {mode === "signup" && (
+        <>
+          <Label htmlFor="fullName">Full Name</Label>
+          <Input
+            id="fullName"
+            type="text"
+            placeholder="Your full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="mt-1"
+            autoFocus
+            onKeyPress={(e) => e.key === "Enter" && handleSendMagicLink()}
+          />
+        </>
+      )}
+      
       <Label htmlFor="email">Email</Label>
       <Input
         id="email"
@@ -81,46 +94,35 @@ const Auth = () => {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="mt-1"
-        autoFocus
-        onKeyPress={(e) => e.key === "Enter" && handleEmailSubmit()}
+        autoFocus={mode === "signin"}
+        onKeyPress={(e) => e.key === "Enter" && handleSendMagicLink()}
       />
-      <Button onClick={handleEmailSubmit} disabled={loading || !email.trim()} className="w-full">
-        {loading ? "Checking..." : "Continue"}
+      
+      <Button 
+        onClick={handleSendMagicLink} 
+        disabled={loading || !email.trim() || (mode === "signup" && !fullName.trim())} 
+        className="w-full"
+      >
+        {loading ? "Sending..." : "Send Magic Link"}
       </Button>
+
+      <div className="text-center">
+        <Button
+          onClick={() => {
+            setMode(mode === "signup" ? "signin" : "signup");
+            setFullName("");
+            setEmail("");
+          }}
+          variant="ghost"
+          className="w-full"
+          disabled={loading}
+        >
+          {mode === "signup" ? "Already have an account? Sign in" : "Don't have an account? Create one"}
+        </Button>
+      </div>
     </div>
   );
 
-  const renderSignupStep = () => (
-    <div className="space-y-4">
-      <Label>Email</Label>
-      <Input value={email} disabled className="mt-1 bg-muted" />
-      <Label htmlFor="fullName">Full Name</Label>
-      <Input
-        id="fullName"
-        type="text"
-        placeholder="Your full name"
-        value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
-        className="mt-1"
-        autoFocus
-        onKeyPress={(e) => e.key === "Enter" && handleSendMagicLink()}
-      />
-      <Button onClick={handleSendMagicLink} disabled={loading || !fullName.trim()} className="w-full">
-        {loading ? "Sending..." : "Send Magic Link"}
-      </Button>
-      <Button
-        onClick={() => {
-          setStep("email");
-          setFullName("");
-        }}
-        variant="ghost"
-        className="w-full"
-        disabled={loading}
-      >
-        Change Email
-      </Button>
-    </div>
-  );
 
   const renderSentStep = () => (
     <div className="space-y-6 text-center">
@@ -136,7 +138,7 @@ const Auth = () => {
 
       <Button
         onClick={() => {
-          setStep("email");
+          setStep("form");
           setFullName("");
           setEmail("");
         }}
@@ -155,22 +157,22 @@ const Auth = () => {
         <div className="text-center mb-8">
           <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48 mx-auto mb-4" />
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
-            {step === "email"
-              ? "Welcome Back, Beautiful Bride 💍"
-              : step === "signup"
-                ? "Create Your Account"
-                : "Check Your Email"}
+            {step === "form"
+              ? mode === "signup" 
+                ? "Create Your Account 💍"
+                : "Welcome Back, Beautiful Bride 💍"
+              : "Check Your Email"}
           </h1>
           <p className="text-muted-foreground">
-            {step === "email"
-              ? "Enter your email to continue planning your dream wedding"
-              : step === "signup"
-                ? "We just need a few details to get started"
-                : "Click the magic link to sign in"}
+            {step === "form"
+              ? mode === "signup"
+                ? "Let's get started planning your dream wedding"
+                : "Enter your email to continue planning"
+              : "Click the magic link to sign in"}
           </p>
         </div>
 
-        {step === "email" ? renderEmailStep() : step === "signup" ? renderSignupStep() : renderSentStep()}
+        {step === "form" ? renderFormStep() : renderSentStep()}
       </Card>
     </div>
   );
