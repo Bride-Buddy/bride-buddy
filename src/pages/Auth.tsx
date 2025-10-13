@@ -252,18 +252,9 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-accent/30 p-4">
       <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4">
+          <div className="inline-flex items-center justify-center mb-6">
             <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
-            {step === "info" ? "Welcome Back, Beautiful Bride 💍" : "Enter Verification Code"}
-          </h1>
-          <p className="text-muted-foreground">
-            {step === "info" 
-              ? "Sign in or create your account to continue planning your dream wedding"
-              : "Check your email or phone for the verification code"
-            }
-          </p>
         </div>
 
         {step === "info" ? renderInfoStep() : renderVerifyStep()}
