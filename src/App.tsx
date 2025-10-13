@@ -245,7 +245,10 @@ const BrideBuddyReturningUser = () => {
     return (
       <div className="flex flex-col h-full bg-gray-50">
         <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-          <button onClick={() => setView("chat")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <button
+            onClick={() => setView("chat")}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
             <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
           </button>
           <button
@@ -505,7 +508,10 @@ const BrideBuddyReturningUser = () => {
           >
             <ArrowLeft className="text-white" size={20} />
           </button>
-          <button onClick={() => setView("chat")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <button
+            onClick={() => setView("chat")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer" />
             <span className="text-white font-semibold">Wedding Planner</span>
           </button>
@@ -599,3 +605,16 @@ const BrideBuddyReturningUser = () => {
 };
 
 export default BrideBuddyReturningUser;
+import Dashboard from "./BrideDashboardPage";
+
+// Then in your component:
+<BrideDashboardPage
+  userName="Sarah"
+  weddingDate={new Date("2026-06-20")}
+  engagementDate={new Date("2025-01-15")}
+  budget={50000}
+  spent={28450}
+  weddingVibeEmojis={["💕", "🌸", "🌿", "🏡", "🦋"]}
+  plannerCategories={plannerCategories}
+  onNavigate={(view) => setView(view)}
+/>;
