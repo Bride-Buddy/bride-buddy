@@ -79,36 +79,6 @@ export type Database = {
           },
         ]
       }
-      email_otps: {
-        Row: {
-          created_at: string
-          email: string
-          expires_at: string
-          full_name: string | null
-          id: string
-          otp_code: string
-          verified: boolean
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          expires_at?: string
-          full_name?: string | null
-          id?: string
-          otp_code: string
-          verified?: boolean
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          expires_at?: string
-          full_name?: string | null
-          id?: string
-          otp_code?: string
-          verified?: boolean
-        }
-        Relationships: []
-      }
       messages: {
         Row: {
           content: string
@@ -330,10 +300,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_otps: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       reset_daily_messages: {
         Args: Record<PropertyKey, never>
         Returns: undefined

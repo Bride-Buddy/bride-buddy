@@ -12,8 +12,10 @@ import logo from "@/assets/bride-buddy-logo.png";
 const Auth = () => {
   const [step, setStep] = useState<"info" | "verify">("info");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [otpMethod, setOtpMethod] = useState<"email" | "phone" | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,7 +28,7 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  const handleSendCode = async () => {
+  const handleSendCode = async (method: "email" | "phone") => {
     if (!fullName.trim()) {
       toast({
         title: "Error",
@@ -36,7 +38,7 @@ const Auth = () => {
       return;
     }
 
-    if (!email.trim()) {
+    if (method === "email" && !email.trim()) {
       toast({
         title: "Error",
         description: "Please enter your email",
@@ -45,29 +47,50 @@ const Auth = () => {
       return;
     }
 
+    if (method === "phone" && !phone.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
+    setOtpMethod(method);
 
     try {
-      const { error } = await supabase.functions.invoke("send-email-otp", {
-        body: {
-          action: "send",
-          email,
-          fullName,
-        },
-      });
+      const { error } = await supabase.auth.signInWithOtp(
+        method === "email" 
+          ? { 
+              email,
+              options: {
+                data: {
+                  full_name: fullName,
+                },
+              },
+            }
+          : { 
+              phone,
+              options: {
+                data: {
+                  full_name: fullName,
+                },
+              },
+            }
+      );
 
       if (error) throw error;
 
       toast({
         title: "Code sent!",
-        description: "Check your email for the 6-digit code",
+        description: `Verification code sent to your ${method}`,
       });
       setStep("verify");
     } catch (error: any) {
-      console.error("Error sending code:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send verification code",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -76,7 +99,7 @@ const Auth = () => {
   };
 
   const handleVerifyCode = async () => {
-    if (!otpCode || otpCode.length !== 6) {
+    if (otpCode.length !== 6) {
       toast({
         title: "Error",
         description: "Please enter the 6-digit code",
@@ -88,44 +111,25 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Verify OTP via Edge function
-      const { data, error } = await supabase.functions.invoke("send-email-otp", {
-        body: {
-          action: "verify",
-          email,
-          otpCode,
-          fullName,
-        },
-      });
+      const { data, error } = await supabase.auth.verifyOtp(
+        otpMethod === "email"
+          ? { email, token: otpCode, type: "email" }
+          : { phone, token: otpCode, type: "sms" }
+      );
 
-      if (error) {
-        throw new Error(error.message || "Failed to verify code");
-      }
+      if (error) throw error;
 
-      if (data?.session) {
-        // Set the session from the Edge function response
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session.properties.access_token,
-          refresh_token: data.session.properties.refresh_token,
-        });
-
-        if (sessionError) {
-          throw new Error("Failed to establish session");
-        }
-
+      if (data.user) {
         toast({
           title: "Welcome to Bride Buddy! 💍",
           description: "Your account is ready",
         });
         navigate("/");
-      } else {
-        throw new Error("Invalid verification response");
       }
     } catch (error: any) {
-      console.error("Error verifying code:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to verify code",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -160,13 +164,32 @@ const Auth = () => {
         />
       </div>
 
-      <div className="pt-2">
+      <div>
+        <Label htmlFor="phone">Phone Number</Label>
+        <Input
+          id="phone"
+          type="tel"
+          placeholder="+1 (555) 000-0000"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="mt-1"
+        />
+      </div>
+
+      <div className="space-y-3 pt-2">
         <Button 
-          onClick={handleSendCode}
+          onClick={() => handleSendCode("email")}
           className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
           disabled={loading || !fullName.trim() || !email.trim()}
         >
-          {loading ? "Sending..." : "Send Verification Code"}
+          {loading && otpMethod === "email" ? "Sending..." : "Send Code to Email"}
+        </Button>
+        <Button 
+          onClick={() => handleSendCode("phone")}
+          className="w-full bg-gradient-to-r from-accent to-accent/80 hover:opacity-90 transition-opacity"
+          disabled={loading || !fullName.trim() || !phone.trim()}
+        >
+          {loading && otpMethod === "phone" ? "Sending..." : "Send Code to Text"}
         </Button>
       </div>
     </div>
@@ -176,10 +199,10 @@ const Auth = () => {
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          We sent a 6-digit code to your email
+          We sent a 6-digit code to your {otpMethod}
         </p>
         <p className="text-sm font-medium">
-          {email}
+          {otpMethod === "email" ? email : phone}
         </p>
       </div>
 
@@ -213,6 +236,7 @@ const Auth = () => {
           onClick={() => {
             setStep("info");
             setOtpCode("");
+            setOtpMethod(null);
           }}
           variant="ghost"
           className="w-full"
@@ -228,9 +252,18 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-accent/30 p-4">
       <Card className="w-full max-w-md p-8 shadow-[var(--shadow-elegant)]">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-6">
-            <img src={logo} alt="Bride Buddy Logo" className="w-64 h-64" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
           </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
+            {step === "info" ? "Welcome Back, Beautiful Bride 💍" : "Enter Verification Code"}
+          </h1>
+          <p className="text-muted-foreground">
+            {step === "info" 
+              ? "Sign in or create your account to continue planning your dream wedding"
+              : "Check your email or phone for the verification code"
+            }
+          </p>
         </div>
 
         {step === "info" ? renderInfoStep() : renderVerifyStep()}
