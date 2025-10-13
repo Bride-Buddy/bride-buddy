@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Send, Mail, Sparkles } from "lucide-react";
 
 const BrideBuddyNewUser = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState("landing"); // landing, verification-sent, chatbot
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,7 +27,7 @@ const BrideBuddyNewUser = () => {
     // Simulate email verification (in real app, user clicks link in email)
     // Remove this setTimeout in production - it's just for demo
     setTimeout(() => {
-      setStep("chatbot");
+      navigate("/dashboard");
     }, 3000);
   };
 

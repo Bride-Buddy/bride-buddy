@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Send, LayoutDashboard, CheckSquare, ArrowLeft, DollarSign } from "lucide-react";
 import logo from "@/assets/bride-buddy-logo-ring.png";
+import Auth from "./pages/Auth";
 
 const BrideBuddyReturningUser = () => {
   const [view, setView] = useState("chat"); // chat, dashboard, or planner
@@ -604,4 +606,14 @@ const BrideBuddyReturningUser = () => {
   );
 };
 
-export default BrideBuddyReturningUser;
+const App = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Auth />} />
+      <Route path="/dashboard" element={<BrideBuddyReturningUser />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+export default App;
