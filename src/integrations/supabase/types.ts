@@ -119,6 +119,7 @@ export type Database = {
           last_message_date: string | null
           messages_today: number | null
           partner_name: string | null
+          phone_number: string | null
           relationship_years: string | null
           subscription_tier: string | null
           trial_start_date: string | null
@@ -134,6 +135,7 @@ export type Database = {
           last_message_date?: string | null
           messages_today?: number | null
           partner_name?: string | null
+          phone_number?: string | null
           relationship_years?: string | null
           subscription_tier?: string | null
           trial_start_date?: string | null
@@ -149,6 +151,7 @@ export type Database = {
           last_message_date?: string | null
           messages_today?: number | null
           partner_name?: string | null
+          phone_number?: string | null
           relationship_years?: string | null
           subscription_tier?: string | null
           trial_start_date?: string | null
