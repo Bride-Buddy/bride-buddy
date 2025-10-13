@@ -159,12 +159,16 @@ const Auth = () => {
           </button>
         </div>
 
+        <p className="text-xs text-center text-gray-500 px-4 mt-2">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
+        </p>
+        
         <button
           onClick={() => setIsLogin(!isLogin)}
-          className="w-full text-sm text-center text-gray-500 hover:text-purple-400 transition-colors"
+          className="w-full text-sm text-center text-purple-400 font-semibold hover:text-purple-500 transition-colors underline"
           disabled={loading}
         >
-          {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          {isLogin ? "Sign up here" : "Sign in here"}
         </button>
       </div>
     </div>
