@@ -33,27 +33,8 @@ const Auth = () => {
       toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
       return;
     }
-
-    setLoading(true);
-
-    try {
-      const { data: user, error } = await supabase.auth.admin.getUserByEmail(email);
-      if (error) throw error;
-
-      if (user) {
-        // Returning user
-        setIsReturningUser(true);
-        await handleSendOtp();
-      } else {
-        // New user
-        setIsReturningUser(false);
-        setStep("signup");
-      }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    // Move to signup step to collect name
+    setStep("signup");
   };
 
   // Step 2: send OTP
@@ -69,9 +50,8 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          data: isReturningUser ? undefined : { full_name: fullName },
+          data: { full_name: fullName },
         },
-        type: "otp", // ensures 6-digit code
       });
 
       if (error) throw error;
