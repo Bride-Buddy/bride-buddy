@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LayoutDashboard, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "figma:asset/8e7d24f90c7824b37b31f61eb58d9bf8ce395eaa.png";
+import logo from "@/assets/bride-buddy-logo.png";
 
 interface Message {
   id: string;
