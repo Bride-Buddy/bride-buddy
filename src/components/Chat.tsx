@@ -7,6 +7,7 @@ import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
 import { TrialBanner } from "./TrialBanner";
+import BrideDashboard from "./BrideDashboard";
 
 interface Message {
   id: string;
@@ -26,7 +27,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null>(null);
+  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "main" | null>(null);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
@@ -232,7 +233,7 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist") => {
+  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "main") => {
     if (view) {
       setDashboardView(view);
     } else {
@@ -254,7 +255,11 @@ const Chat = ({ userId }: ChatProps) => {
         subscriptionTier={subscriptionTier}
         onUpgrade={handleUpgrade}
       />
-      <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
+      {dashboardView === "main" ? (
+        <BrideDashboard userId={userId} />
+      ) : (
+        <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
+      )}
       
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
@@ -270,11 +275,18 @@ const Chat = ({ userId }: ChatProps) => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button
+                    onClick={() => handleQuickReply("Show me my dashboard", "main")}
+                    variant="default"
+                    className="hover:bg-primary/90"
+                  >
+                    🌸 Bride Dashboard
+                  </Button>
+                  <Button
                     onClick={() => handleQuickReply("Show me my dashboard", "overview")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    View Dashboard
+                    Quick Overview
                   </Button>
                   <Button
                     onClick={() => handleQuickReply("Show my full checklist", "checklist")}
