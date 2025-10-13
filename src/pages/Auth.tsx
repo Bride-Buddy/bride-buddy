@@ -10,12 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/bride-buddy-logo.png";
 
 const Auth = () => {
-  const [step, setStep] = useState<"info" | "verify">("info");
+  const [step, setStep] = useState<"email" | "signup" | "verify">("email");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [otpMethod, setOtpMethod] = useState<"email" | "phone" | null>(null);
+  const [isReturningUser, setIsReturningUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,17 +27,8 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  const handleSendCode = async (method: "email" | "phone") => {
-    if (!fullName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your full name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (method === "email" && !email.trim()) {
+  const handleEmailSubmit = async () => {
+    if (!email.trim()) {
       toast({
         title: "Error",
         description: "Please enter your email",
@@ -47,44 +37,63 @@ const Auth = () => {
       return;
     }
 
-    if (method === "phone" && !phone.trim()) {
+    setLoading(true);
+
+    try {
+      // Check if user exists in profiles table
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("user_id", "(SELECT id FROM auth.users WHERE email = '" + email + "')")
+        .maybeSingle();
+
+      if (profile) {
+        // Returning user - send OTP directly
+        setIsReturningUser(true);
+        await handleSendOtp();
+      } else {
+        // New user - go to signup step to collect name
+        setIsReturningUser(false);
+        setStep("signup");
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Please enter your phone number",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!isReturningUser && !fullName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your full name",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    setOtpMethod(method);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp(
-        method === "email" 
-          ? { 
-              email,
-              options: {
-                data: {
-                  full_name: fullName,
-                },
-              },
-            }
-          : { 
-              phone,
-              options: {
-                data: {
-                  full_name: fullName,
-                },
-              },
-            }
-      );
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
 
       if (error) throw error;
 
       toast({
         title: "Code sent!",
-        description: `Verification code sent to your ${method}`,
+        description: "Verification code sent to your email",
       });
       setStep("verify");
     } catch (error: any) {
@@ -111,11 +120,11 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp(
-        otpMethod === "email"
-          ? { email, token: otpCode, type: "email" }
-          : { phone, token: otpCode, type: "sms" }
-      );
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: "email",
+      });
 
       if (error) throw error;
 
@@ -137,8 +146,45 @@ const Auth = () => {
     }
   };
 
-  const renderInfoStep = () => (
+  const renderEmailStep = () => (
     <div className="space-y-4">
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="your.email@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-1"
+          autoFocus
+          onKeyPress={(e) => e.key === "Enter" && handleEmailSubmit()}
+        />
+      </div>
+
+      <Button 
+        onClick={handleEmailSubmit}
+        className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+        disabled={loading || !email.trim()}
+      >
+        {loading ? "Checking..." : "Continue"}
+      </Button>
+    </div>
+  );
+
+  const renderSignupStep = () => (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          disabled
+          className="mt-1 bg-muted"
+        />
+      </div>
+
       <div>
         <Label htmlFor="fullName">Full Name</Label>
         <Input
@@ -149,49 +195,29 @@ const Auth = () => {
           onChange={(e) => setFullName(e.target.value)}
           className="mt-1"
           autoFocus
+          onKeyPress={(e) => e.key === "Enter" && handleSendOtp()}
         />
       </div>
 
-      <div>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="your.email@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1"
-        />
-      </div>
+      <Button 
+        onClick={handleSendOtp}
+        className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+        disabled={loading || !fullName.trim()}
+      >
+        {loading ? "Sending..." : "Verify Email"}
+      </Button>
 
-      <div>
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          type="tel"
-          placeholder="+1 (555) 000-0000"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div className="space-y-3 pt-2">
-        <Button 
-          onClick={() => handleSendCode("email")}
-          className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
-          disabled={loading || !fullName.trim() || !email.trim()}
-        >
-          {loading && otpMethod === "email" ? "Sending..." : "Send Code to Email"}
-        </Button>
-        <Button 
-          onClick={() => handleSendCode("phone")}
-          className="w-full bg-gradient-to-r from-accent to-accent/80 hover:opacity-90 transition-opacity"
-          disabled={loading || !fullName.trim() || !phone.trim()}
-        >
-          {loading && otpMethod === "phone" ? "Sending..." : "Send Code to Text"}
-        </Button>
-      </div>
+      <Button 
+        onClick={() => {
+          setStep("email");
+          setFullName("");
+        }}
+        variant="ghost"
+        className="w-full"
+        disabled={loading}
+      >
+        Change Email
+      </Button>
     </div>
   );
 
@@ -199,10 +225,10 @@ const Auth = () => {
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          We sent a 6-digit code to your {otpMethod}
+          We sent a 6-digit code to your email
         </p>
         <p className="text-sm font-medium">
-          {otpMethod === "email" ? email : phone}
+          {email}
         </p>
       </div>
 
@@ -234,9 +260,8 @@ const Auth = () => {
 
         <Button 
           onClick={() => {
-            setStep("info");
+            setStep(isReturningUser ? "email" : "signup");
             setOtpCode("");
-            setOtpMethod(null);
           }}
           variant="ghost"
           className="w-full"
@@ -256,17 +281,19 @@ const Auth = () => {
             <img src={logo} alt="Bride Buddy Logo" className="w-48 h-48" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
-            {step === "info" ? "Welcome Back, Beautiful Bride 💍" : "Enter Verification Code"}
+            {step === "email" ? "Welcome Back, Beautiful Bride 💍" : step === "signup" ? "Create Your Account" : "Enter Verification Code"}
           </h1>
           <p className="text-muted-foreground">
-            {step === "info" 
-              ? "Sign in or create your account to continue planning your dream wedding"
-              : "Check your email or phone for the verification code"
+            {step === "email" 
+              ? "Enter your email to continue planning your dream wedding"
+              : step === "signup"
+              ? "We just need a few details to get started"
+              : "Check your email for the verification code"
             }
           </p>
         </div>
 
-        {step === "info" ? renderInfoStep() : renderVerifyStep()}
+        {step === "email" ? renderEmailStep() : step === "signup" ? renderSignupStep() : renderVerifyStep()}
       </Card>
     </div>
   );
