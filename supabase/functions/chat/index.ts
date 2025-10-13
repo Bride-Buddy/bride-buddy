@@ -80,6 +80,53 @@ serve(async (req) => {
       });
     }
 
+    // Check subscription tier and message limits (server-side enforcement)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("subscription_tier, messages_today, last_message_date, trial_start_date")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(JSON.stringify({ 
+        error: 'Unable to verify subscription status' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Enforce message limits for free tier
+    if (profile.subscription_tier === 'free') {
+      const today = new Date().toISOString().split('T')[0];
+      const messageCount = profile.last_message_date === today ? profile.messages_today : 0;
+      
+      if (messageCount >= 20) {
+        return new Response(JSON.stringify({ 
+          error: 'Daily message limit reached. Upgrade to VIP for unlimited messages.' 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Trial expired check
+    if (profile.subscription_tier === 'trial' && profile.trial_start_date) {
+      const trialStart = new Date(profile.trial_start_date);
+      const daysSinceTrial = Math.floor((Date.now() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceTrial > 7) {
+        return new Response(JSON.stringify({ 
+          error: 'Trial period expired. Please upgrade to continue.' 
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Get conversation history
     const { data: messages, error: messagesError } = await supabase
       .from("messages")
