@@ -5,16 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/bride-buddy-logo.png";
 
 const Auth = () => {
-  const [step, setStep] = useState<"email" | "signup" | "verify">("email");
+  const [step, setStep] = useState<"email" | "signup" | "sent">("email");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [isReturningUser, setIsReturningUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,9 +35,9 @@ const Auth = () => {
     setStep("signup");
   };
 
-  // Step 2: send OTP
-  const handleSendOtp = async () => {
-    if (!isReturningUser && !fullName.trim()) {
+  // Step 2: send magic link
+  const handleSendMagicLink = async () => {
+    if (!fullName.trim()) {
       toast({ title: "Error", description: "Please enter your full name", variant: "destructive" });
       return;
     }
@@ -47,20 +45,23 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           data: { full_name: fullName },
+          emailRedirectTo: redirectUrl,
         },
       });
 
       if (error) throw error;
 
       toast({
-        title: "Code sent!",
-        description: `A 6-digit verification code was sent to ${email}`,
+        title: "Check your email!",
+        description: `We sent a magic link to ${email}`,
       });
-      setStep("verify");
+      setStep("sent");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -68,29 +69,6 @@ const Auth = () => {
     }
   };
 
-  // Step 3: verify OTP
-  const handleVerifyCode = async () => {
-    if (otpCode.length !== 6) {
-      toast({ title: "Error", description: "Please enter the 6-digit code", variant: "destructive" });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: "email" });
-      if (error) throw error;
-
-      if (data.user) {
-        toast({ title: "Welcome to Bride Buddy! 💍", description: "Your account is ready" });
-        navigate("/");
-      }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Render UI for each step
   const renderEmailStep = () => (
@@ -125,10 +103,10 @@ const Auth = () => {
         onChange={(e) => setFullName(e.target.value)}
         className="mt-1"
         autoFocus
-        onKeyPress={(e) => e.key === "Enter" && handleSendOtp()}
+        onKeyPress={(e) => e.key === "Enter" && handleSendMagicLink()}
       />
-      <Button onClick={handleSendOtp} disabled={loading || !fullName.trim()} className="w-full">
-        {loading ? "Sending..." : "Verify Email"}
+      <Button onClick={handleSendMagicLink} disabled={loading || !fullName.trim()} className="w-full">
+        {loading ? "Sending..." : "Send Magic Link"}
       </Button>
       <Button
         onClick={() => {
@@ -144,41 +122,30 @@ const Auth = () => {
     </div>
   );
 
-  const renderVerifyStep = () => (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <p className="text-sm text-muted-foreground">We sent a 6-digit code to your email</p>
-        <p className="text-sm font-medium">{email}</p>
+  const renderSentStep = () => (
+    <div className="space-y-6 text-center">
+      <div className="space-y-2">
+        <p className="text-lg font-medium">Check your email!</p>
+        <p className="text-sm text-muted-foreground">
+          We sent a magic link to <span className="font-medium">{email}</span>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Click the link in your email to sign in.
+        </p>
       </div>
 
-      <div className="space-y-4 flex flex-col items-center">
-        <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
-          <InputOTPGroup>
-            <InputOTPSlot index={0} />
-            <InputOTPSlot index={1} />
-            <InputOTPSlot index={2} />
-            <InputOTPSlot index={3} />
-            <InputOTPSlot index={4} />
-            <InputOTPSlot index={5} />
-          </InputOTPGroup>
-        </InputOTP>
-
-        <Button onClick={handleVerifyCode} disabled={loading || otpCode.length !== 6} className="w-full">
-          {loading ? "Verifying..." : "Verify & Continue"}
-        </Button>
-
-        <Button
-          onClick={() => {
-            setStep(isReturningUser ? "email" : "signup");
-            setOtpCode("");
-          }}
-          variant="ghost"
-          className="w-full"
-          disabled={loading}
-        >
-          Go Back
-        </Button>
-      </div>
+      <Button
+        onClick={() => {
+          setStep("email");
+          setFullName("");
+          setEmail("");
+        }}
+        variant="ghost"
+        className="w-full"
+        disabled={loading}
+      >
+        Use a different email
+      </Button>
     </div>
   );
 
@@ -192,18 +159,18 @@ const Auth = () => {
               ? "Welcome Back, Beautiful Bride 💍"
               : step === "signup"
                 ? "Create Your Account"
-                : "Enter Verification Code"}
+                : "Check Your Email"}
           </h1>
           <p className="text-muted-foreground">
             {step === "email"
               ? "Enter your email to continue planning your dream wedding"
               : step === "signup"
                 ? "We just need a few details to get started"
-                : "Check your email for the verification code"}
+                : "Click the magic link to sign in"}
           </p>
         </div>
 
-        {step === "email" ? renderEmailStep() : step === "signup" ? renderSignupStep() : renderVerifyStep()}
+        {step === "email" ? renderEmailStep() : step === "signup" ? renderSignupStep() : renderSentStep()}
       </Card>
     </div>
   );
