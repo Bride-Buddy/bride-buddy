@@ -11,10 +11,14 @@ const inputSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
   isOnboarding: z.boolean().optional(),
- userLocation: z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-}).nullable().optional(),
+  userLocation: z
+    .object({
+      latitude: z.number(),
+      longitude: z.number(),
+    })
+    .nullable()
+    .optional(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -100,7 +104,11 @@ serve(async (req) => {
     console.log("📂 Session check:", { sessionId, found: !!session, error: sessionError?.message });
 
     if (sessionError || !session || session.user_id !== user.id) {
-      console.error("❌ Session validation failed:", { sessionError, sessionUserId: session?.user_id, actualUserId: user.id });
+      console.error("❌ Session validation failed:", {
+        sessionError,
+        sessionUserId: session?.user_id,
+        actualUserId: user.id,
+      });
       return new Response(
         JSON.stringify({
           error: "Forbidden - Session not found or access denied",
@@ -123,18 +131,19 @@ serve(async (req) => {
     console.log("👤 Profile fetch:", { found: !!profile, error: profileError?.message });
 
     // CRITICAL FIX: If profile doesn't exist, create it now
-    if (profileError?.code === 'PGRST116') { // No rows returned
+    if (profileError?.code === "PGRST116") {
+      // No rows returned
       console.log("🔧 Creating missing profile for user:", user.id);
       const { data: newProfile, error: createError } = await supabase
         .from("profiles")
         .insert({
           user_id: user.id,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+          full_name: user.user_metadata?.full_name || user.email?.split("@")[0],
           phone_number: user.phone,
         })
         .select()
         .single();
-      
+
       if (createError) {
         console.error("❌ Failed to create profile:", createError);
         return new Response(
@@ -148,11 +157,11 @@ serve(async (req) => {
           },
         );
       }
-      
+
       // Also create timeline
       await supabase.from("timeline").insert({ user_id: user.id });
       console.log("✅ Profile and timeline created");
-      
+
       // Use the new profile
       profile = newProfile;
     } else if (profileError || !profile) {
@@ -173,7 +182,7 @@ serve(async (req) => {
     if (!profile) {
       throw new Error("Profile unexpectedly null after creation/fetch");
     }
-    
+
     const userName = profile.full_name?.split(" ")[0] || "beautiful bride";
 
     // Enforce message limits for free tier
@@ -225,17 +234,11 @@ What would you like to do? 💕`;
         });
 
         // Downgrade to free tier (this will trigger data cleanup via database trigger)
-        await supabase
-          .from("profiles")
-          .update({ subscription_tier: "free" })
-          .eq("user_id", user.id);
+        await supabase.from("profiles").update({ subscription_tier: "free" }).eq("user_id", user.id);
 
-        return new Response(
-          JSON.stringify({ success: true }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // After day 7: Block if still on trial (shouldn't happen due to trigger)
@@ -452,10 +455,11 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     console.log("✅ User message stored");
 
     // Build conversation for AI (include history)
-    const conversationHistory = messages?.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content,
-    })) || [];
+    const conversationHistory =
+      messages?.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+      })) || [];
 
     // Define vendor search tool
     const tools = [
@@ -463,17 +467,20 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
         type: "function",
         function: {
           name: "search_vendors",
-          description: "Search for wedding vendors near the user's location using OpenStreetMap data. Use this when the user mentions a vendor name (e.g., 'My photographer is Sarah's Studio', 'We booked Elite Catering'). Returns vendor details including name, address, phone, and website, then automatically adds them to the vendor tracker.",
+          description:
+            "Search for wedding vendors near the user's location using OpenStreetMap data. Use this when the user mentions a vendor name (e.g., 'My photographer is Sarah's Studio', 'We booked Elite Catering'). Returns vendor details including name, address, phone, and website, then automatically adds them to the vendor tracker.",
           parameters: {
             type: "object",
             properties: {
               query: {
                 type: "string",
-                description: "Vendor name or search query (e.g., 'Sarah Studio', 'Elite Catering', 'wedding venue', 'photographer')",
+                description:
+                  "Vendor name or search query (e.g., 'Sarah Studio', 'Elite Catering', 'wedding venue', 'photographer')",
               },
               category: {
                 type: "string",
-                description: "Vendor service type (e.g., 'Photography', 'Catering', 'Venue', 'Flowers', 'DJ', 'Makeup', 'Cake', 'Videography')",
+                description:
+                  "Vendor service type (e.g., 'Photography', 'Catering', 'Venue', 'Flowers', 'DJ', 'Makeup', 'Cake', 'Videography')",
               },
               radius_km: {
                 type: "number",
@@ -516,7 +523,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("❌ AI API error:", response.status, errorText);
-      
+
       // Handle specific error codes
       if (response.status === 429) {
         return new Response(
@@ -529,7 +536,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
           },
         );
       }
-      
+
       if (response.status === 402) {
         return new Response(
           JSON.stringify({
@@ -541,38 +548,42 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
           },
         );
       }
-      
+
       throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
-    console.log("🤖 AI response received:", { hasChoices: !!aiResponse.choices, choicesLength: aiResponse.choices?.length });
-    
+    console.log("🤖 AI response received:", {
+      hasChoices: !!aiResponse.choices,
+      choicesLength: aiResponse.choices?.length,
+    });
+
     if (!aiResponse.choices || aiResponse.choices.length === 0) {
       console.error("❌ No choices in AI response:", aiResponse);
       throw new Error("AI returned no response choices");
     }
-    
+
     let assistantMessage = aiResponse.choices[0].message?.content || "";
     const toolCalls = aiResponse.choices[0].message?.tool_calls;
-    
-    console.log("📝 Assistant message:", { 
-      messageLength: assistantMessage.length, 
+
+    console.log("📝 Assistant message:", {
+      messageLength: assistantMessage.length,
       hasToolCalls: !!toolCalls,
-      toolCallsCount: toolCalls?.length || 0
+      toolCallsCount: toolCalls?.length || 0,
     });
 
     // Handle tool calls (vendor search)
     if (toolCalls && toolCalls.length > 0) {
       console.log("Tool calls detected:", toolCalls);
-      
+
       for (const toolCall of toolCalls) {
         if (toolCall.function.name === "search_vendors") {
           const args = JSON.parse(toolCall.function.arguments);
           const { query, category, radius_km = 50 } = args;
 
           if (!userLocation?.latitude || !userLocation?.longitude) {
-            assistantMessage += "\n\n⚠️ I need your location to search for vendors nearby. Please enable location access in your profile settings.";
+            assistantMessage +=
+              "\n\n⚠️ I need your location to search for vendors nearby. Please enable location access in your profile settings.";
             continue;
           }
 
@@ -593,7 +604,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
             });
 
             const osmData = await osmResponse.json();
-            
+
             if (osmData.elements && osmData.elements.length > 0) {
               const vendors = osmData.elements.slice(0, 5).map((element: any) => {
                 const tags = element.tags || {};
@@ -605,7 +616,9 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                     tags["addr:city"],
                     tags["addr:state"],
                     tags["addr:postcode"],
-                  ].filter(Boolean).join(", "),
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
                   phone: tags.phone || tags["contact:phone"] || "",
                   website: tags.website || tags["contact:website"] || "",
                   service_type: category || tags.amenity || tags.shop || query,
@@ -630,17 +643,17 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                     .from("vendors")
                     .select("name")
                     .eq("user_id", user.id)
-                    .in("name", vendors.map((v: any) => v.name));
-                  
-                  const existingNames = new Set(existingVendorsCheck.data?.map(v => v.name) || []);
+                    .in(
+                      "name",
+                      vendors.map((v: any) => v.name),
+                    );
+
+                  const existingNames = new Set(existingVendorsCheck.data?.map((v) => v.name) || []);
                   const newVendors = vendorInserts.filter((v: any) => !existingNames.has(v.name));
-                  
+
                   if (newVendors.length > 0) {
-                    const { error: insertError } = await supabase
-                      .from("vendors")
-                      .insert(newVendors)
-                      .select();
-                    
+                    const { error: insertError } = await supabase.from("vendors").insert(newVendors).select();
+
                     if (insertError) {
                       console.error("Vendor insert error:", insertError);
                     } else {
@@ -659,10 +672,13 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                 const v = vendors[0];
                 assistantMessage += `\n\n✅ Added **${v.name}** to your vendor tracker!\n\n📸 **Service:** ${v.service_type}\n📞 **Phone:** ${v.phone || "Not available"}\n🌐 **Website:** ${v.website || "Not available"}\n📍 **Address:** ${v.address || "Not available"}\n\nYou can view and edit this in your Vendor Tracker! 💕`;
               } else if (vendors.length > 1) {
-                const vendorList = vendors.map((v: any, idx: number) => 
-                  `${idx + 1}. **${v.name}**\n   📸 Service: ${v.service_type}\n   📍 ${v.address || "Not available"}\n   📞 ${v.phone || "Not available"}`
-                ).join("\n\n");
-                assistantMessage += `\n\n✅ I found ${vendors.length} vendors matching "${query}":\n\n${vendorList}\n\nI've added ${vendors.length === 1 ? 'this' : 'these'} to your vendor tracker! You can view details in your Vendor Tracker. 💕`;
+                const vendorList = vendors
+                  .map(
+                    (v: any, idx: number) =>
+                      `${idx + 1}. **${v.name}**\n   📸 Service: ${v.service_type}\n   📍 ${v.address || "Not available"}\n   📞 ${v.phone || "Not available"}`,
+                  )
+                  .join("\n\n");
+                assistantMessage += `\n\n✅ I found ${vendors.length} vendors matching "${query}":\n\n${vendorList}\n\nI've added ${vendors.length === 1 ? "this" : "these"} to your vendor tracker! You can view details in your Vendor Tracker. 💕`;
               }
             } else {
               assistantMessage += `\n\n😊 I couldn't find any vendors matching "${query}" within ${radius_km}km of your location. Try searching with different keywords or expand your search radius!`;
@@ -766,7 +782,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
 
     // Return helpful error message to client
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    
+
     return new Response(
       JSON.stringify({
         error: "I'm having trouble connecting right now 💙 Please try again in a moment!",
