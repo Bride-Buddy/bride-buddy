@@ -19,8 +19,10 @@ function App() {
   const [profile, setProfile] = useState<any>(null);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [pricingLoading, setPricingLoading] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [plannerCategories, setPlannerCategories] = useState<any[]>([]);
+  const [lastTrialNotification, setLastTrialNotification] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -82,22 +84,62 @@ function App() {
     }
   };
 
-  // 🕒 Trial modal logic
+  // 🕒 Enhanced trial modal logic with multi-stage warnings
   useEffect(() => {
     if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
       const trialStart = new Date(profile.trial_start_date);
-      const today = new Date();
+      const now = new Date();
       const trialEnd = new Date(trialStart);
       trialEnd.setDate(trialEnd.getDate() + 7);
 
-      const diffTime = trialEnd.getTime() - today.getTime();
+      const diffTime = trialEnd.getTime() - now.getTime();
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (daysRemaining <= 1 && daysRemaining > 0) {
+      // Check localStorage for last dismissal
+      const lastDismissed = localStorage.getItem("trialModalDismissed");
+      const today = now.toDateString();
+      
+      // Show modal at Day 5, 3, or 1 (unless dismissed today)
+      if ((daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && 
+          daysRemaining > 0 && 
+          lastDismissed !== today) {
         setShowTrialModal(true);
       }
+
+      // Show toast notifications
+      if (lastTrialNotification !== today) {
+        import("@/components/ui/use-toast").then(({ toast }) => {
+          if (daysRemaining === 6) {
+            toast({
+              title: "🎉 Your trial has 6 days left!",
+              description: "Enjoying Bride Buddy? Upgrade to VIP to keep all your data!",
+            });
+            setLastTrialNotification(today);
+          } else if (daysRemaining === 5) {
+            toast({
+              title: "⏰ 5 days left in your VIP trial",
+              description: "Don't forget to upgrade to save your progress!",
+            });
+            setLastTrialNotification(today);
+          } else if (daysRemaining === 3) {
+            toast({
+              title: "⚠️ Only 3 days left!",
+              description: "Upgrade now to save your wedding planning progress!",
+              variant: "destructive",
+            });
+            setLastTrialNotification(today);
+          } else if (daysRemaining === 1) {
+            toast({
+              title: "🚨 FINAL DAY of VIP trial!",
+              description: "Upgrade today or lose all your data tomorrow!",
+              variant: "destructive",
+            });
+            setLastTrialNotification(today);
+          }
+        });
+      }
     }
-  }, [profile]);
+  }, [profile, lastTrialNotification]);
 
   const getDaysRemainingInTrial = () => {
     if (!profile?.trial_start_date) return 0;
@@ -137,7 +179,43 @@ function App() {
             setShowTrialModal(false);
             setShowPricingModal(true);
           }}
-          onBasicClick={() => {
+          onBasicClick={async () => {
+            try {
+              // Downgrade to free tier
+              const { error } = await supabase
+                .from("profiles")
+                .update({ subscription_tier: "free" })
+                .eq("user_id", session?.user?.id);
+              
+              if (error) throw error;
+              
+              setShowTrialModal(false);
+              
+              // Show confirmation
+              import("@/components/ui/use-toast").then(({ toast }) => {
+                toast({
+                  title: "Downgraded to Basic",
+                  description: "You now have 20 messages per day. Your data has been cleared.",
+                });
+              });
+              
+              // Refresh profile
+              if (session?.user?.id) {
+                fetchUserProfile(session.user.id);
+              }
+            } catch (error) {
+              console.error("Error downgrading:", error);
+              import("@/components/ui/use-toast").then(({ toast }) => {
+                toast({
+                  title: "Error",
+                  description: "Failed to downgrade. Please try again.",
+                  variant: "destructive",
+                });
+              });
+            }
+          }}
+          onRemindLater={() => {
+            localStorage.setItem("trialModalDismissed", new Date().toDateString());
             setShowTrialModal(false);
           }}
           onClose={() => setShowTrialModal(false)}
@@ -147,11 +225,38 @@ function App() {
       {showPricingModal && (
         <PricingModal
           isEarlyBird={true}
-          onMonthlySelect={() => {
-            setShowPricingModal(false);
+          loading={pricingLoading}
+          onMonthlySelect={async () => {
+            try {
+              setPricingLoading(true);
+              const { data, error } = await supabase.functions.invoke("create-checkout", {
+                body: { priceId: "price_1SI32gRjwBUM0ZBtdpllX6bZ" }
+              });
+              
+              if (error) throw error;
+              if (data?.url) {
+                window.open(data.url, "_blank");
+              }
+            } catch (error) {
+              console.error("Checkout error:", error);
+              import("@/components/ui/use-toast").then(({ toast }) => {
+                toast({
+                  title: "Error",
+                  description: "Failed to start checkout. Please try again.",
+                  variant: "destructive",
+                });
+              });
+            } finally {
+              setPricingLoading(false);
+            }
           }}
           onUntilIDoSelect={() => {
-            setShowPricingModal(false);
+            import("@/components/ui/use-toast").then(({ toast }) => {
+              toast({
+                title: "Coming Soon!",
+                description: "The 'Until I Do' plan will be available soon!",
+              });
+            });
           }}
           onClose={() => setShowPricingModal(false)}
         />

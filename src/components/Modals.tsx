@@ -6,6 +6,7 @@ interface TrialExpirationModalProps {
   onUpgradeClick: () => void;
   onBasicClick: () => void;
   onClose: () => void;
+  onRemindLater: () => void;
 }
 
 export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
@@ -14,13 +15,27 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
   onUpgradeClick,
   onBasicClick,
   onClose,
+  onRemindLater,
 }) => {
+  const getUrgencyColor = () => {
+    if (daysRemaining <= 1) return "from-red-100 to-orange-100";
+    if (daysRemaining <= 3) return "from-orange-100 to-yellow-100";
+    return "from-purple-50 to-blue-50";
+  };
+
+  const getUrgencyEmoji = () => {
+    if (daysRemaining <= 1) return "🚨";
+    if (daysRemaining <= 3) return "⚠️";
+    return "⏰";
+  };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
         <div className="text-center mb-6">
-          <div className="text-5xl mb-4">⏰</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Your VIP Trial is Ending</h2>
+          <div className="text-5xl mb-4">{getUrgencyEmoji()}</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {daysRemaining <= 1 ? "FINAL DAY!" : "Your VIP Trial is Ending"}
+          </h2>
           <p className="text-gray-600">
             Your trial ends in{" "}
             <span className="font-bold text-purple-400">
@@ -29,9 +44,13 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
           </p>
         </div>
 
-        <div className="bg-purple-50 rounded-xl p-4 mb-6">
+        <div className={`bg-gradient-to-r ${getUrgencyColor()} rounded-xl p-4 mb-6`}>
           <p className="text-sm text-gray-700 text-center">
-            <span className="font-semibold">Upgrade now to keep the progress going!</span>
+            <span className="font-semibold">
+              {daysRemaining <= 1 
+                ? "Don't lose your data! Upgrade now to save everything!" 
+                : "Upgrade now to keep the progress going!"}
+            </span>
           </p>
           <p className="text-sm text-gray-600 text-center mt-2">
             Not interested? Downgrade to Basic Chat to continue access to wedding planning chatbot.
@@ -66,6 +85,13 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
           </button>
         </div>
 
+        <button
+          onClick={onRemindLater}
+          className="w-full text-gray-500 hover:text-gray-700 text-sm mt-3 transition-colors"
+        >
+          Remind me tomorrow
+        </button>
+
         <p className="text-xs text-gray-400 text-center mt-4">
           Your account will downgrade automatically on {trialEndDate} at 00:00
         </p>
@@ -79,6 +105,7 @@ interface PricingModalProps {
   onMonthlySelect: () => void;
   onUntilIDoSelect: () => void;
   onClose: () => void;
+  loading?: boolean;
 }
 
 export const PricingModal: React.FC<PricingModalProps> = ({
@@ -86,6 +113,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({
   onMonthlySelect,
   onUntilIDoSelect,
   onClose,
+  loading = false,
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
@@ -130,7 +158,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({
 
           <button
             onClick={onMonthlySelect}
-            className="w-full bg-white text-gray-700 py-6 px-6 rounded-xl hover:shadow-lg transition-all text-left border-2 border-gray-200"
+            disabled={loading}
+            className="w-full bg-white text-gray-700 py-6 px-6 rounded-xl hover:shadow-lg transition-all text-left border-2 border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="text-xl font-bold mb-2">Monthly Plan</div>
             <div className="text-3xl font-bold text-purple-400 mb-2">
@@ -144,7 +173,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({
               )}
               <span className="text-base font-normal text-gray-600">/month</span>
             </div>
-            <div className="text-sm text-gray-600">Billed monthly • Cancel anytime</div>
+            <div className="text-sm text-gray-600">
+              {loading ? "Processing..." : "Billed monthly • Cancel anytime"}
+            </div>
           </button>
         </div>
 

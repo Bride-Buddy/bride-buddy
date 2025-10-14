@@ -25,6 +25,7 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [trialMessageShown, setTrialMessageShown] = useState(false);
 
   const suggestedPrompts: SuggestedPrompt[] = [
     { text: "Show me my dashboard", action: "dashboard" },
