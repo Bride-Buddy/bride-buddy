@@ -142,7 +142,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
           <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
         </div>
         <button
-          onClick={() => navigate("/chat")}
+          onClick={() => navigate("/Dashboard")}
           className="p-2 hover:bg-white/20 rounded-full transition-all"
           aria-label="Go to Dashboard"
         >
