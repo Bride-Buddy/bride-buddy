@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Chat from "./pages/chat";
-import Dashboard from "./pages/Dashboard";
-import Planner from "./pages/Planner";
-import { TrialExpirationModal, PricingModal } from "./components/Modals";
-import NewUserSignup from "./pages/NewUserSignup";
+import Dashboard from "./pages/dashboard";
+import Planner from "./pages/planner";
+import { TrialExpirationModal, PricingModal } from "./components/modals";
+import NewUserSignup from "./pages/new-user-signup";
 
 function App() {
   // App state management
@@ -12,116 +12,20 @@ function App() {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
-  // User data - in production, this comes from your database
-  const [userName] = useState("Sarah");
-  const [userTier] = useState<"vip-trial" | "vip-paid" | "free">("vip-trial");
-  const [trialStartDate] = useState(new Date("2025-10-07")); // 6 days ago for demo
-  const [weddingDate] = useState(new Date("2026-06-20"));
-  const [engagementDate] = useState(new Date("2025-01-15"));
-  const [budget] = useState(50000);
-  const [spent] = useState(28450);
-  const [weddingVibeEmojis] = useState(["💕", "🌸", "🌿", "🏡", "🦋"]);
-
-  // Planner categories data
-  const plannerCategories = [
-    {
-      category: "Venue",
-      emoji: "🏛️",
-      vendor: "The Grand Ballroom",
-      phone: "(555) 234-5678",
-      totalCost: 12000,
-      depositPaid: 5000,
-      totalPaid: 12000,
-      confirmed: true,
-      tasks: [
-        { task: "Book venue", completed: true },
-        { task: "Review contract", completed: true },
-        { task: "Pay deposit", completed: true },
-        { task: "Confirm final details", completed: true },
-      ],
-    },
-    {
-      category: "Catering",
-      emoji: "🍰",
-      vendor: "Delicious Catering Co",
-      phone: "(555) 345-6789",
-      totalCost: 12000,
-      depositPaid: 2000,
-      totalPaid: 8500,
-      confirmed: false,
-      tasks: [
-        { task: "Choose caterer", completed: true },
-        { task: "Menu tasting", completed: true },
-        { task: "Send final guest count (142 guests • 73 chicken, 42 fish, 10 beef, 17 vegetarian)", completed: false },
-        { task: "Final invoice payment", completed: false },
-      ],
-    },
-    {
-      category: "Photography",
-      emoji: "📸",
-      vendor: "Picture Perfect Photography",
-      phone: "(555) 456-7890",
-      totalCost: 4500,
-      depositPaid: 1000,
-      totalPaid: 3500,
-      confirmed: false,
-      tasks: [
-        { task: "Book photographer", completed: true },
-        { task: "Engagement shoot", completed: false },
-        { task: "Create shot list", completed: false },
-        { task: "Confirm day-of timeline", completed: false },
-      ],
-    },
-    {
-      category: "Attire",
-      emoji: "👰",
-      vendor: "Bella Bridal Boutique",
-      phone: "(555) 567-8901",
-      totalCost: 5500,
-      depositPaid: 1500,
-      totalPaid: 4450,
-      confirmed: false,
-      tasks: [
-        { task: "Choose dress", completed: true },
-        { task: "First fitting", completed: true },
-        { task: "Final fitting", completed: false },
-        { task: "Pick up dress", completed: false },
-      ],
-    },
-    {
-      category: "Florals",
-      emoji: "💐",
-      vendor: "Blooms & Petals",
-      phone: "(555) 678-9012",
-      totalCost: 3500,
-      depositPaid: 0,
-      totalPaid: 0,
-      confirmed: false,
-      tasks: [
-        { task: "Choose florist", completed: false },
-        { task: "Select arrangements", completed: false },
-        { task: "Confirm delivery details", completed: false },
-      ],
-    },
-    {
-      category: "Music",
-      emoji: "🎵",
-      vendor: "DJ Mike's Entertainment",
-      phone: "(555) 789-0123",
-      totalCost: 2000,
-      depositPaid: 0,
-      totalPaid: 0,
-      confirmed: false,
-      tasks: [
-        { task: "Book DJ/Band", completed: false },
-        { task: "Create playlist", completed: false },
-        { task: "Schedule sound check", completed: false },
-      ],
-    },
-  ];
+  // User data - fetch from Lovable database
+  const [userName, setUserName] = useState("");
+  const [userTier, setUserTier] = useState<"vip-trial" | "vip-paid" | "free">("free");
+  const [trialStartDate, setTrialStartDate] = useState<Date | null>(null);
+  const [weddingDate, setWeddingDate] = useState<Date | null>(null);
+  const [engagementDate, setEngagementDate] = useState<Date | null>(null);
+  const [budget, setBudget] = useState(0);
+  const [spent, setSpent] = useState(0);
+  const [weddingVibeEmojis, setWeddingVibeEmojis] = useState<string[]>([]);
+  const [plannerCategories, setPlannerCategories] = useState<any[]>([]);
 
   // Helper functions for trial management
   const getDaysRemainingInTrial = () => {
+    if (!trialStartDate) return 0;
     const today = new Date();
     const trialEnd = new Date(trialStartDate);
     trialEnd.setDate(trialEnd.getDate() + 7);
@@ -130,6 +34,7 @@ function App() {
   };
 
   const getTrialEndDate = () => {
+    if (!trialStartDate) return "";
     const trialEnd = new Date(trialStartDate);
     trialEnd.setDate(trialEnd.getDate() + 7);
     return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
@@ -145,13 +50,22 @@ function App() {
     }
   }, [userStatus, userTier]);
 
+  // TODO: Fetch user data from Lovable database on component mount
+  useEffect(() => {
+    // Fetch user data here
+    // Example:
+    // const userData = await fetchUserData();
+    // setUserName(userData.name);
+    // setUserTier(userData.tier);
+    // setWeddingDate(new Date(userData.weddingDate));
+    // etc...
+  }, []);
+
   // NEW USER FLOW
   if (userStatus === "new-user") {
     return (
       <NewUserSignup
         onSignupComplete={() => {
-          // After signup, redirect to onboarding or main app
-          // In production, this would create user in database
           setUserStatus("returning-user");
           setView("chat");
         }}
@@ -176,8 +90,7 @@ function App() {
           }}
           onBasicClick={() => {
             setShowTrialModal(false);
-            // In production, downgrade user to free tier
-            console.log("User chose basic plan");
+            // Downgrade user to free tier in database
           }}
           onClose={() => setShowTrialModal(false)}
         />
@@ -188,12 +101,10 @@ function App() {
           isEarlyBird={true}
           onMonthlySelect={() => {
             // Connect to Stripe monthly plan
-            console.log("Monthly plan selected");
             setShowPricingModal(false);
           }}
           onUntilIDoSelect={() => {
             // Connect to Stripe one-time plan
-            console.log("Until I Do plan selected");
             setShowPricingModal(false);
           }}
           onClose={() => setShowPricingModal(false)}
@@ -201,11 +112,11 @@ function App() {
       )}
 
       {/* Main Views */}
-      {view === "chat" && (
+      {view === "chat" && weddingDate && (
         <Chat userName={userName} userTier={userTier} onNavigate={(newView) => setView(newView as any)} />
       )}
 
-      {view === "dashboard" && (
+      {view === "dashboard" && weddingDate && engagementDate && (
         <Dashboard
           userName={userName}
           weddingDate={weddingDate}
