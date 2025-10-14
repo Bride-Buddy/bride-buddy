@@ -3,7 +3,8 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
-import Chat from "./pages/chat";
+
+import Chat from "./pages/Chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
@@ -19,23 +20,23 @@ function App() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    );
+  const navigate = useNavigate();
 
-    // THEN check for existing session
+  // 🔐 Handle authentication state changes
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    // Check for existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
@@ -48,24 +49,25 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // 📋 Fetch user profile & timeline data
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileError) throw profileError;
+      setProfile(profileData);
 
-      // Check if user needs onboarding
       const { data: timelineData } = await supabase
         .from("timeline")
         .select("engagement_date, wedding_date")
         .eq("user_id", userId)
         .single();
 
+      // 👰 Determine if onboarding is required
       if (!timelineData?.engagement_date || !timelineData?.wedding_date) {
         setNeedsOnboarding(true);
       } else {
@@ -78,16 +80,17 @@ function App() {
     }
   };
 
-  // Check if should show trial modal
+  // 🕒 Trial modal logic
   useEffect(() => {
     if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
       const trialStart = new Date(profile.trial_start_date);
       const today = new Date();
       const trialEnd = new Date(trialStart);
       trialEnd.setDate(trialEnd.getDate() + 7);
+
       const diffTime = trialEnd.getTime() - today.getTime();
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (daysRemaining <= 1 && daysRemaining > 0) {
         setShowTrialModal(true);
       }
@@ -118,11 +121,12 @@ function App() {
     );
   }
 
+  // 🌈 MAIN APP ROUTES
   return (
     <>
       <Toaster />
-      
-      {/* Modals */}
+
+      {/* 💌 Modals */}
       {showTrialModal && (
         <TrialExpirationModal
           daysRemaining={getDaysRemainingInTrial()}
@@ -151,22 +155,30 @@ function App() {
         />
       )}
 
+      {/* 🧭 ROUTER */}
       <Routes>
-        <Route path="/auth" element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding" : "/chat"} />} />
-        <Route path="/auth-redirect" element={<AuthRedirect />} />
+        {/* Login Page */}
         <Route
-          path="/onboarding"
+          path="/auth"
+          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
+        />
+
+        {/* Post-login redirect handler */}
+        <Route path="/AuthRedirect" element={<AuthRedirect />} />
+
+        {/* Onboarding for new users */}
+        <Route
+          path="/OnboardingChat"
           element={
             session && profile ? (
-              <OnboardingChat
-                userId={session.user.id}
-                userName={profile.full_name || ""}
-              />
+              <OnboardingChat userId={session.user.id} userName={profile.full_name || ""} />
             ) : (
-              <Navigate to="/auth" />
+              <Navigate to="/Auth" />
             )
           }
         />
+
+        {/* Main chat interface */}
         <Route
           path="/chat"
           element={
@@ -174,15 +186,17 @@ function App() {
               <Chat
                 userName={profile?.full_name || ""}
                 userTier={profile?.subscription_tier || "free"}
-                onNavigate={(view) => window.location.href = `/${view}`}
+                onNavigate={(view) => navigate(`/${view}`)} // ✅ React Router navigation
               />
             ) : (
-              <Navigate to="/auth" />
+              <Navigate to="/Auth" />
             )
           }
         />
+
+        {/* Dashboard */}
         <Route
-          path="/dashboard"
+          path="/Dashboard"
           element={
             session ? (
               <Dashboard
@@ -193,29 +207,31 @@ function App() {
                 spent={0}
                 weddingVibeEmojis={[]}
                 plannerCategories={[]}
-                onNavigate={(view) => window.location.href = `/${view}`}
+                onNavigate={(view) => navigate(`/${view}`)}
               />
             ) : (
-              <Navigate to="/auth" />
+              <Navigate to="/Auth" />
             )
           }
         />
+
+        {/* Planner */}
         <Route
           path="/planner"
           element={
             session ? (
-              <Planner
-                budget={0}
-                spent={0}
-                plannerCategories={[]}
-                onNavigate={(view) => window.location.href = `/${view}`}
-              />
+              <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
             ) : (
-              <Navigate to="/auth" />
+              <Navigate to="/Auth" />
             )
           }
         />
-        <Route path="/" element={<Navigate to={session ? (needsOnboarding ? "/onboarding" : "/chat") : "/auth"} />} />
+
+        {/* Default redirect */}
+        <Route
+          path="/"
+          element={<Navigate to={session ? (needsOnboarding ? "/OnboardingChat" : "/chat") : "/Auth"} />}
+        />
       </Routes>
     </>
   );
