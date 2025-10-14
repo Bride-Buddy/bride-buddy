@@ -52,6 +52,7 @@ function App() {
   // 📋 Fetch user profile & timeline data
   const fetchUserProfile = async (userId: string) => {
     try {
+      // 1️⃣ Get main profile info
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -59,27 +60,76 @@ function App() {
         .single();
 
       if (profileError) throw profileError;
+
       setProfile(profileData);
 
+      // 2️⃣ Get timeline data
       const { data: timelineData } = await supabase
         .from("timeline")
         .select("engagement_date, wedding_date")
         .eq("user_id", userId)
         .single();
 
-      // 👰 Determine if onboarding is required
+      // 3️⃣ Get vendors and build planner categories
+      const { data: vendorsData } = await supabase.from("vendors").select("name, service, amount, paid");
+
+      // 4️⃣ Get tasks (checklist)
+      const { data: checklistData } = await supabase.from("checklist").select("task_name, completed, due_date, emoji");
+
+      // 5️⃣ Transform data into `plannerCategories` for Dashboard & Planner
+      const groupedByService: any = {};
+      vendorsData?.forEach((v) => {
+        if (!groupedByService[v.service]) {
+          groupedByService[v.service] = {
+            category: v.service,
+            emoji: "💐",
+            vendor: v.name,
+            phone: "",
+            totalCost: v.amount || 0,
+            totalPaid: v.paid ? v.amount : 0,
+            depositPaid: 0,
+            confirmed: v.paid || false,
+            tasks: [],
+          };
+        }
+      });
+
+      checklistData?.forEach((t) => {
+        const firstCat = Object.keys(groupedByService)[0] || "General";
+        if (!groupedByService[firstCat]) {
+          groupedByService[firstCat] = {
+            category: "General",
+            emoji: "📝",
+            vendor: "",
+            phone: "",
+            totalCost: 0,
+            totalPaid: 0,
+            depositPaid: 0,
+            confirmed: false,
+            tasks: [],
+          };
+        }
+        groupedByService[firstCat].tasks.push({
+          task: t.task_name,
+          completed: t.completed,
+        });
+      });
+
+      const plannerArray = Object.values(groupedByService);
+      setPlannerCategories(plannerArray);
+
+      // 6️⃣ Check if onboarding is needed
       if (!timelineData?.engagement_date || !timelineData?.wedding_date) {
         setNeedsOnboarding(true);
       } else {
         setNeedsOnboarding(false);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching user data:", error);
     } finally {
       setLoading(false);
     }
   };
-
   // 🕒 Trial modal logic
   useEffect(() => {
     if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
@@ -189,7 +239,7 @@ function App() {
                 onNavigate={(view) => navigate(`/${view}`)} // ✅ React Router navigation
               />
             ) : (
-              <Navigate to="/chat" />
+              <Navigate to="/Auth" />
             )
           }
         />
@@ -210,7 +260,7 @@ function App() {
                 onNavigate={(view) => navigate(`/${view}`)}
               />
             ) : (
-              <Navigate to="/Dashboard" />
+              <Navigate to="/Auth" />
             )
           }
         />
@@ -220,14 +270,9 @@ function App() {
           path="/planner"
           element={
             session ? (
-              <Planner
-                budget={profile?.budget || 0}
-                spent={profile?.spent || 0}
-                plannerCategories={profile?.plannerCategories || []}
-                onNavigate={(view) => navigate(`/${view}`)} // ✅ Back navigation
-              />
+              <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
             ) : (
-              <Navigate to="/Planner" />
+              <Navigate to="/Auth" />
             )
           }
         />
