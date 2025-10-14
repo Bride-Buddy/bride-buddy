@@ -196,17 +196,19 @@ function App() {
 
         {/* Dashboard */}
         <Route
-         <Dashboard
-  userName={profile?.full_name || ""}
-  weddingDate={new Date(profile?.wedding_date || new Date())}
-  engagementDate={new Date(profile?.engagement_date || new Date())}
-  budget={profile?.budget || 10000}
-  spent={profile?.spent || 0}
-  weddingVibeEmojis={["💍", "🌸", "💖"]}
-  plannerCategories={plannerCategories}
-  onNavigate={(view) => navigate(`/${view}`)}
-/>
-
+          path="/Dashboard"
+          element={
+            session ? (
+              <Dashboard
+                userName={profile?.full_name || ""}
+                weddingDate={new Date(profile?.wedding_date || new Date())}
+                engagementDate={new Date(profile?.engagement_date || new Date())}
+                budget={profile?.budget || 10000}
+                spent={profile?.spent || 0}
+                weddingVibeEmojis={["💍", "🌸", "💖"]}
+                plannerCategories={plannerCategories}
+                onNavigate={(view) => navigate(`/${view}`)}
+              />
             ) : (
               <Navigate to="/Auth" />
             )
