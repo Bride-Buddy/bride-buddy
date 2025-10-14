@@ -11,7 +11,7 @@ import {
   getTrialUnitLabel,
 } from "@/config/testMode";
 
-import Chat from "./pages/chat";
+import Chat from "./components/Chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
@@ -387,11 +387,7 @@ function App() {
           path="/chat"
           element={
             session ? (
-              <Chat
-                userName={profile?.full_name || ""}
-                userTier={profile?.subscription_tier || "free"}
-                onNavigate={(view) => navigate(`/${view}`)} // ✅ React Router navigation
-              />
+              <Chat userId={session.user.id} />
             ) : (
               <Navigate to="/Auth" />
             )

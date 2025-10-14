@@ -254,4 +254,4 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-export default BrideDashboard;
+export default Dashboard;
