@@ -11,7 +11,7 @@ interface Message {
   sender: "user" | "assistant";
 }
 
-export default function App() {
+export default function Dashboard() {
   const [isChatActive, setIsChatActive] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
