@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Send, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logo from "@/assets/bride-buddy-logo-ring.png";
 
 interface Message {
   type: "user" | "bot";
@@ -24,8 +25,6 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const logoUrl = "bride-buddy-logo-new.png";
 
   const suggestedPrompts: SuggestedPrompt[] = [
     { text: "Show me my dashboard", action: "dashboard" },
@@ -131,8 +130,10 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
       {/* HEADER */}
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Bride Buddy" className="w-10 h-10 rounded-full bg-white p-1" />
-          <span className="text-white font-semibold text-sm">Bride Buddy</span>
+          <img src={logo} alt="Bride Buddy" className="w-12 h-12 drop-shadow-lg" />
+          <span className="text-white font-semibold text-lg" style={{ fontFamily: "Quicksand, sans-serif" }}>
+            Bride Buddy
+          </span>
         </div>
         <button
           onClick={() => onNavigate("dashboard")}
