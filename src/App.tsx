@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
 
-import Chat from "./pages/Chat";
+import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
