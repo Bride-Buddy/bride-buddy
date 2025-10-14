@@ -1,4 +1,3 @@
-// AuthRedirect.tsx - REPLACE ENTIRE FILE:
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,26 +29,35 @@ const AuthRedirect = () => {
 
         const config = getCurrentModeConfig();
 
-        // MODE 1: Skip DB, go straight to OnboardingChat (not OnboardChat)
-        if (config.skipDatabaseCreation && config.autoRedirectToOnboarding) {
-          navigate("/OnboardingChat");
+        // MODE 1: Skip DB, go straight to OnboardingChat
+        if ("skipDatabaseCreation" in config && config.skipDatabaseCreation) {
+          navigate("/OnboardingChat", { state: { userId: session.user.id, userName: session.user.email } });
           return;
         }
 
-        // MODE 2 & 3: Check if user is new (needs onboarding)
+        // MODE 2 & 3: Check if user has completed onboarding
         const { data: profileData } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("user_id", session.user.id)
           .single();
 
-        // New user → OnboardingChat
-        if (!profileData) {
-          navigate("/OnboardingChat");
+        // Check if user has onboarding data
+        const { data: timelineData } = await supabase
+          .from("timeline")
+          .select("engagement_date, wedding_date")
+          .eq("user_id", session.user.id)
+          .single();
+
+        // New user (no profile OR no timeline data) → OnboardingChat
+        if (!profileData || !timelineData?.engagement_date || !timelineData?.wedding_date) {
+          navigate("/OnboardingChat", {
+            state: { userId: session.user.id, userName: profileData?.full_name || session.user.email },
+          });
           return;
         }
 
-        // Returning user → Dashboard
+        // Returning user with complete data → Dashboard
         navigate("/Dashboard");
       } catch (error) {
         console.error("Unexpected error:", error);
