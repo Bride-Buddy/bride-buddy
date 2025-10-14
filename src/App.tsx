@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Chat from "./pages/chat";
-import Dashboard from "./pages/dashboard";
-import Planner from "./pages/planner";
-import { TrialExpirationModal, PricingModal } from "./components/modals";
-import NewUserSignup from "./pages/new-user-signup";
+import Dashboard from "./pages/Dashboard";
+import Planner from "./pages/Planner";
+import { TrialExpirationModal, PricingModal } from "./components/Modals";
+import NewUserSignup from "./pages/NewUserSignup";
 
 function App() {
   // App state management
