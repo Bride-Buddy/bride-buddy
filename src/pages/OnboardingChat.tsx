@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Send, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import logoUrl from "@/assets/bride-buddy-logo-new.png";
 import { useNavigate, useLocation } from "react-router-dom";
 interface Message {
@@ -14,23 +13,29 @@ interface OnboardingChatProps {
   userId: string;
   userName: string;
 }
-// Use state if available, otherwise use props
-const userId = stateUserId || propUserId;
-const userName = stateUserName || propUserName;
+
 const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get userId/userName from route state if available
+  const stateUserId = location.state?.userId;
+  const stateUserName = location.state?.userName;
+
+  const userId = stateUserId || propUserId;
+  const userName = stateUserName || propUserName;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sessionId, setSessionId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const initSession = async () => {
       const { data, error } = await supabase
         .from("chat_sessions")
-        .insert({ user_id: propUserId, title: "Onboarding Session" })
+        .insert({ user_id: userId, title: "Onboarding Session" })
         .select()
         .single();
 
