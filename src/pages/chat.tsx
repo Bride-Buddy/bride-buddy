@@ -28,10 +28,10 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
   const [trialMessageShown, setTrialMessageShown] = useState(false);
 
   const suggestedPrompts: SuggestedPrompt[] = [
-    { text: "Show me my dashboard", action: "dashboard" },
-    { text: "Pick up where we left off", action: "continue" },
-    { text: "Just need to vent", action: "vent" },
-    { text: "To-do today", action: "todo" },
+    { text: "View my Dashboard", action: "dashboard" },
+    { text: "Add a vendor", action: "add-vendor" },
+    { text: "Update my Wedding Profile", action: "update-profile" },
+    { text: "Just chat", action: "just-chat" },
   ];
 
   const handlePromptClick = (prompt: SuggestedPrompt) => {
@@ -40,21 +40,22 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
       return;
     }
 
-    let botResponse = "";
-    if (prompt.action === "continue") {
-      botResponse = `Let's continue where we left off! ${
-        lastTopic ? `We were talking about ${lastTopic}. 💕` : "What would you like to focus on today?"
-      }`;
-    } else if (prompt.action === "vent") {
-      botResponse = "Go ahead — I’m here for you 😌💭 Sometimes it helps just to get it out.";
-    } else if (prompt.action === "todo") {
-      botResponse = "Here’s your to-do list for today! ✅ Ready to tackle it?";
+    if (prompt.action === "add-vendor") {
+      handleSendMessage("I'd like to add a vendor");
+      return;
     }
 
-    setMessages([
-      { type: "user", text: prompt.text },
-      { type: "bot", text: botResponse },
-    ]);
+    if (prompt.action === "update-profile") {
+      handleSendMessage("I'd like to update my wedding profile");
+      return;
+    }
+
+    if (prompt.action === "just-chat") {
+      setMessages([
+        { type: "user", text: prompt.text },
+        { type: "bot", text: "I'm here for whatever you need! 💕 What's on your mind?" },
+      ]);
+    }
   };
 
   // unique chat session ID - create session in database
@@ -113,7 +114,7 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
 
       const botResponse: Message = {
         type: "bot",
-        text: data?.response || "I’m here to help 💕 What’s on your mind?",
+        text: data?.response || "I'm here to help 💕 What's on your mind?",
       };
 
       setMessages((prev) => [...prev, botResponse]);
