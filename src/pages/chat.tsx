@@ -64,6 +64,9 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate, 
     }
   };
 
+  // Create persistent session - should be done on component mount
+  const [sessionId] = useState(() => crypto.randomUUID());
+
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
@@ -74,7 +77,7 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate, 
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: { 
-          sessionId: crypto.randomUUID(), // Generate a session ID
+          sessionId: sessionId, // Use persistent session ID
           message: text 
         }
       });
