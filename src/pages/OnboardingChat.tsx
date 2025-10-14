@@ -3,6 +3,7 @@ import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import logoUrl from "@/assets/bride-buddy-logo-new.png";
 
 interface Message {
   type: "user" | "bot";
@@ -14,34 +15,20 @@ interface OnboardingChatProps {
   userName: string;
 }
 
-const OnboardingChat: React.FC = () => {
+const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sessionId, setSessionId] = useState<string>("");
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("Bride");
   const [isLoading, setIsLoading] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/");
-        return;
-      }
-
-      const user = session.user;
-      setUserId(user.id);
-      setUserName(user.user_metadata?.full_name || "beautiful bride 💕");
-
+    const initSession = async () => {
       const { data, error } = await supabase
         .from("chat_sessions")
-        .insert({ user_id: user.id, title: "Onboarding Session" })
+        .insert({ user_id: propUserId, title: "Onboarding Session" })
         .select()
         .single();
 
@@ -54,8 +41,8 @@ const OnboardingChat: React.FC = () => {
       setSessionId(data.id);
     };
 
-    initUser();
-  }, [navigate]);
+    initSession();
+  }, [propUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -163,7 +150,7 @@ const OnboardingChat: React.FC = () => {
           <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
             <div className="text-center space-y-3">
               <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
-                Welcome, {userName}! 💕
+                Welcome, {propUserName}! 💕
               </h2>
               <p className="text-gray-600">I'm so excited to help you plan your big day!</p>
             </div>
