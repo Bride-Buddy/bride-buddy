@@ -27,24 +27,48 @@ export const TEST_MODE_CONFIG = {
     allowBothTierSelection: true,
   },
 
-  // Test Mode 2: Medium testing (30 minutes, no email, Stripe checkout)
   mode2: {
-    skipEmailVerification: true,
+    skipEmailVerification: false, // Show mock email verification
+    useMockEmailVerification: true, // Mock/instant verification
+    skipDatabaseCreation: true, // No real profile (always new user)
+    alwaysNewUser: true, // Always treat as new user
     landingPage: "auth",
-    trialDurationMinutes: 30,
+    showAuthRedirect: true, // MATCHED: AuthRedirect.tsx
+    autoRedirectToOnboarding: false, // Don't skip verification steps
+    requireEmailVerificationFirst: true, // Force email verification flow
+    redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
+    trialDurationMinutes: 5, // CHANGED: 5 minutes (not 30)
+    autoRedirectToModalAfterTrial: true, // NEW: Auto-redirect to Modal when trial expires
+    redirectToDashboard: true, // Dashboard.tsx
+    showPricingModalsAfterTrial: true, // Modal.tsx appears after 5 min trial
     instantVIPUpgrade: false,
     hasBasicTier: true,
-    showStripeCheckout: true,
+    showStripeCheckout: true, // Stripe for VIP
+    showBasicDowngrade: true, // Basic option available
+    allowBothTierSelection: true,
   },
 
-  // Test Mode 3: Full production testing (email verification, onboarding, Stripe)
   mode3: {
-    skipEmailVerification: false,
+    skipEmailVerification: false, // CHANGED: Real email verification
+    useMockEmailVerification: false, // NEW: Send real email with magic link
+    skipDatabaseCreation: false, // CHANGED: Create real user profile in DB
+    alwaysNewUser: false, // Check if user exists
     landingPage: "auth",
-    trialDurationMinutes: 30,
+    showAuthRedirect: true, // MATCHED: AuthRedirect.tsx (magic link destination)
+    autoRedirectToOnboarding: false, // Proper flow through verification
+    requireEmailVerificationFirst: true, // Must verify email first
+    redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
+    createUserProfileAfterOnboarding: true, // NEW: Create DB profile after onboarding
+    trialDurationMinutes: 5, // 5 minute free trial
+    autoRedirectToModalAfterTrial: true, // Auto-redirect to Modal when trial expires
+    redirectToDashboard: true, // MATCHED: Dashboard.tsx
+    autoPopulateUserInfo: true, // NEW: Auto-populate user data in dashboard
+    showPricingModalsAfterTrial: true, // Modal.tsx after 5 min
     instantVIPUpgrade: false,
     hasBasicTier: true,
-    showStripeCheckout: true,
+    showStripeCheckout: true, // Stripe for VIP selection
+    showBasicFreeTier: true, // NEW: Basic is free tier (not downgrade)
+    allowBothTierSelection: true,
   },
 
   // Production Mode
