@@ -127,7 +127,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           <div
             className="bg-white rounded-2xl shadow-lg p-6 cursor-pointer hover:shadow-xl transition-all"
-            onClick={() => onNavigate("planner")}
+            onClick={() => onNavigate("Planner")}
           >
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <DollarSign size={20} className="text-purple-400" />
@@ -152,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <div className="text-xs text-center text-purple-400 font-medium mt-4">
-                Click to view full wedding planner →
+                Click to view full wedding planner → onClick={() => onNavigate("Planner")}
               </div>
             </div>
           </div>
@@ -241,11 +241,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               ))}
             </div>
-            <button
+            <button "View full wedding planner"
               onClick={() => onNavigate("planner")}
               className="w-full mt-4 text-sm text-purple-400 hover:text-purple-500 font-medium transition-colors"
-            >
-              View full wedding planner →
+            > 
             </button>
           </div>
         </div>
