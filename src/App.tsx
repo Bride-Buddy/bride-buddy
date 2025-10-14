@@ -1,4 +1,12 @@
-import React, { useState, useEffect } from "react";
+// 🧪 TEST MODE - Change before deployment!
+const IS_TESTING = true;
+
+// Trial duration configuration
+const TRIAL_DURATION_MS = IS_TESTING
+  ? 30 * 1000 // 30 seconds for testing (easier to see all notifications)
+  : 7 * 24 * 60 * 60 * 1000; // 7 days for production
+
+const TRIAL_DURATION_DAYS = IS_TESTING ? 30 / (24 * 60 * 60) : 7; // For date calculationsimport React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
@@ -98,11 +106,13 @@ function App() {
       // Check localStorage for last dismissal
       const lastDismissed = localStorage.getItem("trialModalDismissed");
       const today = now.toDateString();
-      
+
       // Show modal at Day 5, 3, or 1 (unless dismissed today)
-      if ((daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && 
-          daysRemaining > 0 && 
-          lastDismissed !== today) {
+      if (
+        (daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) &&
+        daysRemaining > 0 &&
+        lastDismissed !== today
+      ) {
         setShowTrialModal(true);
       }
 
@@ -164,7 +174,100 @@ function App() {
       </div>
     );
   }
+  useEffect(() => {
+    if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
+      const trialStart = new Date(profile.trial_start_date);
+      const now = new Date();
 
+      // ✅ Use consistent duration
+      const trialEnd = new Date(trialStart.getTime() + TRIAL_DURATION_MS);
+
+      const diffTime = trialEnd.getTime() - now.getTime();
+
+      // Calculate remaining time (for testing: seconds, for prod: days)
+      const timeRemaining = IS_TESTING
+        ? Math.ceil(diffTime / 1000) // seconds
+        : Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // days
+
+      const lastDismissed = localStorage.getItem("trialModalDismissed");
+      const today = now.toDateString();
+
+      // Adjust thresholds for testing
+      const warningThresholds = IS_TESTING
+        ? [25, 20, 15, 10, 5] // seconds: show warnings at 25s, 20s, 15s, 10s, 5s remaining
+        : [5, 3, 1]; // days: show warnings at 5, 3, 1 days remaining
+
+      // Show modal at warning thresholds (unless dismissed today)
+      if (warningThresholds.includes(timeRemaining) && timeRemaining > 0 && lastDismissed !== today) {
+        setShowTrialModal(true);
+      }
+
+      // Show toast notifications
+      if (lastTrialNotification !== today) {
+        import("@/components/ui/use-toast").then(({ toast }) => {
+          if (IS_TESTING) {
+            // Testing toasts (in seconds)
+            if (timeRemaining === 25) {
+              toast({
+                title: "🎉 Your trial has 25 seconds left!",
+                description: "Enjoying Bride Buddy? Upgrade to VIP to keep all your data!",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 15) {
+              toast({
+                title: "⏰ 15 seconds left in your VIP trial",
+                description: "Don't forget to upgrade to save your progress!",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 10) {
+              toast({
+                title: "⚠️ Only 10 seconds left!",
+                description: "Upgrade now to save your wedding planning progress!",
+                variant: "destructive",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 5) {
+              toast({
+                title: "🚨 FINAL 5 SECONDS of VIP trial!",
+                description: "Upgrade today or lose all your data!",
+                variant: "destructive",
+              });
+              setLastTrialNotification(today);
+            }
+          } else {
+            // Production toasts (in days)
+            if (timeRemaining === 6) {
+              toast({
+                title: "🎉 Your trial has 6 days left!",
+                description: "Enjoying Bride Buddy? Upgrade to VIP to keep all your data!",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 5) {
+              toast({
+                title: "⏰ 5 days left in your VIP trial",
+                description: "Don't forget to upgrade to save your progress!",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 3) {
+              toast({
+                title: "⚠️ Only 3 days left!",
+                description: "Upgrade now to save your wedding planning progress!",
+                variant: "destructive",
+              });
+              setLastTrialNotification(today);
+            } else if (timeRemaining === 1) {
+              toast({
+                title: "🚨 FINAL DAY of VIP trial!",
+                description: "Upgrade today or lose all your data tomorrow!",
+                variant: "destructive",
+              });
+              setLastTrialNotification(today);
+            }
+          }
+        });
+      }
+    }
+  }, [profile, lastTrialNotification]);
   // 🌈 MAIN APP ROUTES
   return (
     <>
@@ -186,11 +289,11 @@ function App() {
                 .from("profiles")
                 .update({ subscription_tier: "free" })
                 .eq("user_id", session?.user?.id);
-              
+
               if (error) throw error;
-              
+
               setShowTrialModal(false);
-              
+
               // Show confirmation
               import("@/components/ui/use-toast").then(({ toast }) => {
                 toast({
@@ -198,7 +301,7 @@ function App() {
                   description: "You now have 20 messages per day. Your data has been cleared.",
                 });
               });
-              
+
               // Refresh profile
               if (session?.user?.id) {
                 fetchUserProfile(session.user.id);
@@ -235,7 +338,7 @@ function App() {
                   Authorization: `Bearer ${session?.access_token}`,
                 },
               });
-              
+
               if (error) throw error;
               if (data?.url) {
                 window.open(data.url, "_blank");
@@ -263,7 +366,7 @@ function App() {
                   Authorization: `Bearer ${session?.access_token}`,
                 },
               });
-              
+
               if (error) throw error;
               if (data?.url) {
                 window.open(data.url, "_blank");
