@@ -201,7 +201,7 @@ function App() {
           trialEndDate={getTrialEndDateLocal()}
           onUpgradeClick={async () => {
             const config = getCurrentModeConfig();
-            
+
             // Test Mode 1: Instant VIP upgrade without Stripe
             if (config.instantVIPUpgrade && !config.showStripeCheckout) {
               try {
@@ -213,7 +213,7 @@ function App() {
                 if (error) throw error;
 
                 setShowTrialModal(false);
-                
+
                 import("@/components/ui/use-toast").then(({ toast }) => {
                   toast({
                     title: "Welcome to VIP! 💎",
@@ -236,20 +236,20 @@ function App() {
               }
               return;
             }
-            
+
             // Test Mode 2/3 & Production: Show pricing modal with Stripe
             setShowTrialModal(false);
             setShowPricingModal(true);
           }}
           onBasicClick={async () => {
             const config = getCurrentModeConfig();
-            
+
             // Test Mode 1: No basic tier
             if (!config.hasBasicTier) {
               setShowTrialModal(false);
               return;
             }
-            
+
             try {
               // Downgrade to free tier
               const { error } = await supabase
@@ -361,41 +361,32 @@ function App() {
         {/* Login Page */}
         <Route
           path="/auth"
-          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
+          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding-chat" : "/chat"} />}
         />
 
         {/* Email verification page */}
-        <Route path="/EmailVerification" element={<EmailVerification />} />
+        <Route path="/email-verification" element={<email-verification />} />
 
         {/* Post-login redirect handler */}
-        <Route path="/AuthRedirect" element={<AuthRedirect />} />
+        <Route path="/auth-redirect" element={<auth-redirect />} />
 
         {/* Onboarding for new users */}
         <Route
-          path="/OnboardingChat"
+          path="/onboarding-chat"
           element={
             session && profile ? (
-              <OnboardingChat userId={session.user.id} userName={profile.full_name || ""} />
+              <onboarding-chat userId={session.user.id} userName={profile.full_name || ""} />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/auth" />
             )
           }
         />
 
         {/* Main chat interface */}
-        <Route
-          path="/chat"
-          element={
-            session ? (
-              <Chat userId={session.user.id} />
-            ) : (
-              <Navigate to="/Auth" />
-            )
-          }
-        />
+        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/auth" />} />
 
         {/* Dashboard */}
-        <Route path="/Dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/Auth" />} />
+        <Route path="/dashboard" element={session ? <dashboard userId={session.user.id} /> : <Navigate to="/auth" />} />
 
         {/* Planner */}
         <Route

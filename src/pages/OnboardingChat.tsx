@@ -14,7 +14,7 @@ interface OnboardingChatProps {
   userName: string;
 }
 
-const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
+const onboarding-chat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -128,7 +128,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
             toast.success("Your personalized dashboard is ready! 💙");
-            navigate("/Dashboard");
+            navigate("/dashboard");
           }, 1500);
         }
       }

@@ -18,20 +18,20 @@ const AuthRedirect = () => {
         if (error) {
           console.error("Auth redirect error:", error);
           toast.error("Authentication failed");
-          navigate("/Auth");
+          navigate("/auth");
           return;
         }
 
         if (!session) {
-          navigate("/Auth");
+          navigate("/auth");
           return;
         }
 
         const config = getCurrentModeConfig();
 
-        // MODE 1: Skip DB, go straight to OnboardingChat
+        // MODE 1: Skip DB, go straight to onboarding-chat
         if ("skipDatabaseCreation" in config && config.skipDatabaseCreation) {
-          navigate("/OnboardingChat", { state: { userId: session.user.id, userName: session.user.email } });
+          navigate("/onboarding-chat", { state: { userId: session.user.id, userName: session.user.email } });
           return;
         }
 
@@ -49,19 +49,19 @@ const AuthRedirect = () => {
           .eq("user_id", session.user.id)
           .single();
 
-        // New user (no profile OR no timeline data) → OnboardingChat
+        // New user (no profile OR no timeline data) → onboarding-chat
         if (!profileData || !timelineData?.engagement_date || !timelineData?.wedding_date) {
-          navigate("/OnboardingChat", {
+          navigate("/onboarding-chat", {
             state: { userId: session.user.id, userName: profileData?.full_name || session.user.email },
           });
           return;
         }
 
         // Returning user with complete data → Dashboard
-        navigate("/Dashboard");
+        navigate("/dashboard");
       } catch (error) {
         console.error("Unexpected error:", error);
-        navigate("/Auth");
+        navigate("/auth");
       }
     };
 
