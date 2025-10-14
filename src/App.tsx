@@ -375,11 +375,12 @@ function App() {
           }
         />
 
-        {/* Default root path - always goes to Auth */}
-        <Route path="/" element={<Auth />} />
-      </Routes>
-    </>
-  );
-}
+<Routes>
+  <Route path="/" element={<Auth />} />  // ← This is your "home page"
+  <Route path="/auth-redirect" element={<AuthRedirect />} />
+  <Route path="/onboarding" element={<OnboardingChat />} />
+  <Route path="/chat" element={<Chat />} />
+  <Route path="/dashboard" element={<Dashboard />} />
+</Routes>
 
 export default App;
