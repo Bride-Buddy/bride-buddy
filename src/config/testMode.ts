@@ -14,7 +14,7 @@ export const TEST_MODE_CONFIG = {
   // Test Mode 1: Quick testing (30 seconds, no email, instant VIP)
   mode1: {
     skipEmailVerification: true,
-    landingPage: "chat",
+    landingPage: "auth",
     trialDurationSeconds: 30,
     instantVIPUpgrade: true,
     hasBasicTier: false,
@@ -24,7 +24,7 @@ export const TEST_MODE_CONFIG = {
   // Test Mode 2: Medium testing (30 minutes, no email, Stripe checkout)
   mode2: {
     skipEmailVerification: true,
-    landingPage: "chat",
+    landingPage: "auth",
     trialDurationMinutes: 30,
     instantVIPUpgrade: false,
     hasBasicTier: true,
@@ -34,7 +34,7 @@ export const TEST_MODE_CONFIG = {
   // Test Mode 3: Full production testing (email verification, onboarding, Stripe)
   mode3: {
     skipEmailVerification: false,
-    landingPage: "onboarding",
+    landingPage: "auth",
     trialDurationMinutes: 30,
     instantVIPUpgrade: false,
     hasBasicTier: true,
@@ -44,7 +44,7 @@ export const TEST_MODE_CONFIG = {
   // Production Mode
   production: {
     skipEmailVerification: false,
-    landingPage: "onboarding",
+    landingPage: "auth",
     trialDurationDays: 7,
     instantVIPUpgrade: false,
     hasBasicTier: true,
