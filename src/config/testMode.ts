@@ -11,14 +11,18 @@ export const TEST_MODE: TestModeValue = 2; // Change to 0 for production, 1/2/3 
 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
-  // Test Mode 1: Quick testing (30 seconds, no email, instant VIP)
+  // Test Mode 1: Mock flow testing (30 seconds, no DB, tier selection modal)
   mode1: {
     skipEmailVerification: true,
+    skipDatabaseCreation: true, // NEW: No real profile created
     landingPage: "auth",
+    autoRedirectToOnboarding: true, // NEW: Auto-redirect after auth
     trialDurationSeconds: 30,
-    instantVIPUpgrade: true,
-    hasBasicTier: false,
+    showTierSelectionModal: true, // NEW: Show modal after trial
+    instantVIPUpgrade: false, // Changed: User chooses tier
+    hasBasicTier: true, // Changed: Basic tier is available
     showStripeCheckout: false,
+    allowBothTierSelection: true, // NEW: Both VIP and Basic clickable
   },
 
   // Test Mode 2: Medium testing (30 minutes, no email, Stripe checkout)
