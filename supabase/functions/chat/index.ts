@@ -18,15 +18,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("🚀 Chat function called");
+
   try {
     // Validate input
     const body = await req.json();
+    console.log("📨 Request body:", { sessionId: body.sessionId, messageLength: body.message?.length });
     const parsed = inputSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error("❌ Input validation failed:", parsed.error);
       return new Response(
         JSON.stringify({
           error: "Invalid input",
+          details: parsed.error.errors,
         }),
         {
           status: 400,
@@ -43,10 +48,12 @@ serve(async (req) => {
 
     // Verify user authentication
     const authHeader = req.headers.get("Authorization");
+    console.log("🔐 Auth header present:", !!authHeader);
     if (!authHeader) {
+      console.error("❌ No auth header");
       return new Response(
         JSON.stringify({
-          error: "Unauthorized",
+          error: "Unauthorized - No auth header provided",
         }),
         {
           status: 401,
@@ -63,14 +70,17 @@ serve(async (req) => {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser(token);
+    console.log("👤 User authenticated:", user?.id);
     
     // Get user location from metadata
     const userLocation = user?.user_metadata?.location;
 
     if (authError || !user) {
+      console.error("❌ Auth error:", authError);
       return new Response(
         JSON.stringify({
-          error: "Unauthorized",
+          error: "Unauthorized - Invalid token",
+          details: authError?.message,
         }),
         {
           status: 401,
@@ -86,10 +96,14 @@ serve(async (req) => {
       .eq("id", sessionId)
       .single();
 
+    console.log("📂 Session check:", { sessionId, found: !!session, error: sessionError?.message });
+
     if (sessionError || !session || session.user_id !== user.id) {
+      console.error("❌ Session validation failed:", { sessionError, sessionUserId: session?.user_id, actualUserId: user.id });
       return new Response(
         JSON.stringify({
-          error: "Forbidden",
+          error: "Forbidden - Session not found or access denied",
+          details: sessionError?.message,
         }),
         {
           status: 403,
@@ -105,17 +119,56 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
+    console.log("👤 Profile fetch:", { found: !!profile, error: profileError?.message });
+
     if (profileError) {
-      console.error("Profile fetch error:", profileError);
-      return new Response(
-        JSON.stringify({
-          error: "Unable to verify subscription status",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      console.error("❌ Profile fetch error:", profileError);
+      
+      // CRITICAL FIX: If profile doesn't exist, create it now
+      if (profileError.code === 'PGRST116') { // No rows returned
+        console.log("🔧 Creating missing profile for user:", user.id);
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+            phone_number: user.phone,
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error("❌ Failed to create profile:", createError);
+          return new Response(
+            JSON.stringify({
+              error: "Failed to create user profile",
+              details: createError.message,
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+          );
+        }
+        
+        // Also create timeline
+        await supabase.from("timeline").insert({ user_id: user.id });
+        console.log("✅ Profile and timeline created");
+        
+        // Use the new profile
+        profile = newProfile;
+      } else {
+        return new Response(
+          JSON.stringify({
+            error: "Unable to verify subscription status",
+            details: profileError.message,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     // Get user name early for trial expiration message
@@ -434,8 +487,38 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       }),
     });
 
+    console.log("🤖 AI API response status:", response.status);
+
     if (!response.ok) {
-      throw new Error(`AI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("❌ AI API error:", response.status, errorText);
+      
+      // Handle specific error codes
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: "We're experiencing high demand right now. Please try again in a moment! 💕",
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({
+            error: "Our AI service needs attention. Please contact support! 💖",
+          }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      
+      throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
