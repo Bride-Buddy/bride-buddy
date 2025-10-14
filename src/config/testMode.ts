@@ -3,7 +3,7 @@
 //
 // TEST_MODE = 0 (Production): Full email verification, 7-day trial, Stripe checkout
 // TEST_MODE = 1: No email verification, 30-second trial, instant VIP upgrade (no Stripe)
-// TEST_MODE = 2: No email verification, 30-minute trial, Stripe checkout at trial end
+// TEST_MODE = 2: No email verification, 5-minute trial, Stripe checkout at trial end
 // TEST_MODE = 3: Full email verification, complete onboarding flow, production-ready testing
 
 type TestModeValue = 0 | 1 | 2 | 3;
