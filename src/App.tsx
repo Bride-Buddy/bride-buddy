@@ -7,8 +7,8 @@ import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
+import OnboardingChat from "./pages/OnboardingChat";
 import { TrialExpirationModal, PricingModal } from "./components/Modals";
-import OnboardingDialog from "./components/OnboardingDialog";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -16,6 +16,7 @@ function App() {
   const [profile, setProfile] = useState<any>(null);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -56,6 +57,19 @@ function App() {
 
       if (error) throw error;
       setProfile(data);
+
+      // Check if user needs onboarding
+      const { data: timelineData } = await supabase
+        .from("timeline")
+        .select("engagement_date, wedding_date")
+        .eq("user_id", userId)
+        .single();
+
+      if (!timelineData?.engagement_date || !timelineData?.wedding_date) {
+        setNeedsOnboarding(true);
+      } else {
+        setNeedsOnboarding(false);
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -136,16 +150,21 @@ function App() {
         />
       )}
 
-      {/* Onboarding Dialog */}
-      {session?.user && profile && (
-        <OnboardingDialog 
-          userId={session.user.id} 
-          userName={profile.full_name || ""} 
-        />
-      )}
-
       <Routes>
-        <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/chat" />} />
+        <Route path="/auth" element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding" : "/chat"} />} />
+        <Route
+          path="/onboarding"
+          element={
+            session && profile ? (
+              <OnboardingChat
+                userId={session.user.id}
+                userName={profile.full_name || ""}
+              />
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
         <Route
           path="/chat"
           element={
@@ -194,7 +213,7 @@ function App() {
             )
           }
         />
-        <Route path="/" element={<Navigate to={session ? "/chat" : "/auth"} />} />
+        <Route path="/" element={<Navigate to={session ? (needsOnboarding ? "/onboarding" : "/chat") : "/auth"} />} />
       </Routes>
     </>
   );

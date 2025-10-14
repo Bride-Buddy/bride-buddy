@@ -11,6 +11,7 @@ const corsHeaders = {
 const inputSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
+  isOnboarding: z.boolean().optional(),
 });
 
 serve(async (req) => {
@@ -32,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { sessionId, message } = parsed.data;
+    const { sessionId, message, isOnboarding } = parsed.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -192,21 +193,56 @@ serve(async (req) => {
 
     const isEarlyAdopter = userCount !== null && userCount <= 100;
 
-    // Call AI
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-          {
-              role: "system",
-              content: `You are Bride Buddy 💍, a warm, enthusiastic, and personalized 24/7 wedding planning companion! You're like their best friend who knows EVERYTHING about their journey.
+    // Determine system prompt based on onboarding mode
+    let systemPrompt = "";
+    
+    if (isOnboarding) {
+      systemPrompt = `You are Bride Buddy 💍, an AI wedding planning assistant conducting a conversational onboarding interview.
+
+YOUR MISSION: Collect the following information through natural, friendly conversation:
+1. Engagement date
+2. Wedding date
+3. How long they've been together (relationship duration)
+4. Partner's name (optional)
+5. Budget range (optional)
+6. Any tasks already completed (optional)
+
+IMPORTANT INSTRUCTIONS:
+- Ask ONE question at a time in a warm, conversational way
+- Use emojis liberally to keep it fun! 💕✨🎉
+- Acknowledge their answers before moving to the next question
+- Be flexible - if they provide multiple pieces of info at once, acknowledge all of it
+- Keep responses SHORT and friendly
+- Extract dates, names, and numbers from their natural language responses
+
+CONVERSATION FLOW:
+1. Start with: "Hi! I'm Bride Buddy, your AI wedding planning BFF! 🎉 I'm so excited to help you plan your big day! First things first - when did you get engaged? 💍"
+2. After engagement date: "That's so romantic! 💕 Now, the big question - when's the wedding? 🗓️"
+3. After wedding date: Calculate days until wedding and say something like "That's [X] days away! 🌸 Tell me about your journey together - how long have you two been a couple? 😊"
+4. After relationship duration: "Beautiful! 💑 What's your partner's name? (This is optional, but it helps me personalize everything for you both!)"
+5. After partner name (or skip): "Do you have a budget range in mind for the wedding? 💰 (Totally optional - we can set this up later too!)"
+6. After budget (or skip): "Have you completed any planning tasks already? Like booking a venue, sending save-the-dates, etc.? ✅ (Again, optional!)"
+7. After all info collected: "Perfect! I've got everything I need! 🎊 Your personalized dashboard is being built right now with all YOUR data - your timeline, your checklist, your budget. Let me show you what we've created together! ✨ ONBOARDING_COMPLETE"
+
+DATA EXTRACTION:
+- Parse dates from natural language (e.g., "Valentine's Day this year" = 2025-02-14)
+- Extract numbers and time periods (e.g., "3 years", "18 months")
+- Identify tasks from their responses
+- When you collect each piece of data, use these special markers in your response so the system can save it:
+  [SAVE:engagement_date=YYYY-MM-DD]
+  [SAVE:wedding_date=YYYY-MM-DD]
+  [SAVE:relationship_years=text]
+  [SAVE:partner_name=text]
+  [SAVE:budget=number]
+  [SAVE:tasks=task1|task2|task3]
+
+EXAMPLE:
+User: "We got engaged on Valentine's Day!"
+You: "Aww, that's so romantic! 💕 Valentine's Day 2025! [SAVE:engagement_date=2025-02-14] Now, the big question - when's the wedding? 💑"
+
+Remember: Keep it conversational, warm, and fun! This is the start of their special journey! 🌟`;
+    } else {
+      systemPrompt = `You are Bride Buddy 💍, a warm, enthusiastic, and personalized 24/7 wedding planning companion! You're like their best friend who knows EVERYTHING about their journey.
 
 CRITICAL - PERSONALIZATION:
 - ALWAYS use the user's actual name (${userName}) in your responses
@@ -261,7 +297,24 @@ IMPORTANT:
 - Reference their personal data (wedding date, completed tasks, vendors) when relevant
 - Always end on a positive, encouraging note! 🚀💖
 
-Remember: You're not just a planner, you're their wedding BFF! 💕✨`,
+Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
+    }
+
+    // Call AI
+    const response = await fetch(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
             },
             ...messages.map((msg: any) => ({
               role: msg.role,
@@ -279,11 +332,81 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`,
     const aiResponse = await response.json();
     const assistantMessage = aiResponse.choices[0].message.content;
 
+    // Parse and save data if in onboarding mode
+    if (isOnboarding) {
+      const savePatterns = {
+        engagement_date: /\[SAVE:engagement_date=([^\]]+)\]/,
+        wedding_date: /\[SAVE:wedding_date=([^\]]+)\]/,
+        relationship_years: /\[SAVE:relationship_years=([^\]]+)\]/,
+        partner_name: /\[SAVE:partner_name=([^\]]+)\]/,
+        budget: /\[SAVE:budget=([^\]]+)\]/,
+        tasks: /\[SAVE:tasks=([^\]]+)\]/,
+      };
+
+      const updates: any = {};
+      
+      for (const [key, pattern] of Object.entries(savePatterns)) {
+        const match = assistantMessage.match(pattern);
+        if (match) {
+          if (key === 'budget') {
+            updates[key] = parseFloat(match[1]);
+          } else {
+            updates[key] = match[1];
+          }
+        }
+      }
+
+      // Update profile with collected data
+      if (Object.keys(updates).length > 0) {
+        const profileUpdates: any = {};
+        const timelineUpdates: any = {};
+
+        if (updates.engagement_date) timelineUpdates.engagement_date = updates.engagement_date;
+        if (updates.wedding_date) timelineUpdates.wedding_date = updates.wedding_date;
+        if (updates.relationship_years) profileUpdates.relationship_years = updates.relationship_years;
+        if (updates.partner_name) profileUpdates.partner_name = updates.partner_name;
+
+        if (Object.keys(profileUpdates).length > 0) {
+          await supabase
+            .from("profiles")
+            .update(profileUpdates)
+            .eq("user_id", user.id);
+        }
+
+        if (Object.keys(timelineUpdates).length > 0) {
+          await supabase
+            .from("timeline")
+            .update(timelineUpdates)
+            .eq("user_id", user.id);
+        }
+
+        // Save tasks if provided
+        if (updates.tasks) {
+          const taskList = updates.tasks.split('|').filter((t: string) => t.trim());
+          const taskInserts = taskList.map((task: string) => ({
+            user_id: user.id,
+            task_name: task.trim(),
+            completed: true,
+            emoji: '✅'
+          }));
+
+          if (taskInserts.length > 0) {
+            await supabase.from("checklist").insert(taskInserts);
+          }
+        }
+      }
+    }
+
+    // Clean up save markers from the message before storing
+    let cleanedMessage = assistantMessage;
+    const saveMarkerPattern = /\[SAVE:[^\]]+\]/g;
+    cleanedMessage = cleanedMessage.replace(saveMarkerPattern, '').trim();
+
     // Save assistant response
     const { error: insertError } = await supabase.from("messages").insert({
       session_id: sessionId,
       role: "assistant",
-      content: assistantMessage,
+      content: cleanedMessage,
     });
 
     if (insertError) throw insertError;
