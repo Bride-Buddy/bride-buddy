@@ -105,12 +105,12 @@ function App() {
       // Check localStorage for last dismissal
       const lastDismissed = localStorage.getItem("trialModalDismissed");
       const today = now.toDateString();
-      
+
       // Determine when to show modal based on test mode
       const shouldShowModal = showTestModeIndicator
         ? daysRemaining <= 5 // Show when 5 units or less remaining
         : (daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && daysRemaining > 0;
-      
+
       if (shouldShowModal && lastDismissed !== today) {
         setShowTrialModal(true);
       }
@@ -159,8 +159,8 @@ function App() {
     if (!profile?.trial_start_date) return "";
     const trialEnd = formatTrialEndDate(new Date(profile.trial_start_date));
     const config = getCurrentModeConfig();
-    
-    if ('trialDurationSeconds' in config || 'trialDurationMinutes' in config) {
+
+    if ("trialDurationSeconds" in config || "trialDurationMinutes" in config) {
       return new Date(trialEnd).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     } else {
       return new Date(trialEnd).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
@@ -179,16 +179,17 @@ function App() {
   return (
     <>
       <Toaster />
-      
+
       {/* Test Mode Indicator */}
       {showTestModeIndicator && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
-          🧪 TEST MODE {(() => {
+          🧪 TEST MODE{" "}
+          {(() => {
             const config = getCurrentModeConfig();
-            if ('trialDurationSeconds' in config) return `(${config.trialDurationSeconds}-second trial)`;
-            if ('trialDurationMinutes' in config) return `(${config.trialDurationMinutes}-minute trial)`;
-            if ('trialDurationDays' in config) return `(${config.trialDurationDays}-day trial)`;
-            return '';
+            if ("trialDurationSeconds" in config) return `(${config.trialDurationSeconds}-second trial)`;
+            if ("trialDurationMinutes" in config) return `(${config.trialDurationMinutes}-minute trial)`;
+            if ("trialDurationDays" in config) return `(${config.trialDurationDays}-day trial)`;
+            return "";
           })()}
         </div>
       )}
@@ -209,11 +210,11 @@ function App() {
                 .from("profiles")
                 .update({ subscription_tier: "free" })
                 .eq("user_id", session?.user?.id);
-              
+
               if (error) throw error;
-              
+
               setShowTrialModal(false);
-              
+
               // Show confirmation
               import("@/components/ui/use-toast").then(({ toast }) => {
                 toast({
@@ -221,7 +222,7 @@ function App() {
                   description: "You now have 20 messages per day. Your data has been cleared.",
                 });
               });
-              
+
               // Refresh profile
               if (session?.user?.id) {
                 fetchUserProfile(session.user.id);
@@ -258,7 +259,7 @@ function App() {
                   Authorization: `Bearer ${session?.access_token}`,
                 },
               });
-              
+
               if (error) throw error;
               if (data?.url) {
                 window.open(data.url, "_blank");
@@ -286,7 +287,7 @@ function App() {
                   Authorization: `Bearer ${session?.access_token}`,
                 },
               });
-              
+
               if (error) throw error;
               if (data?.url) {
                 window.open(data.url, "_blank");
@@ -352,16 +353,7 @@ function App() {
         />
 
         {/* Dashboard */}
-        <Route
-          path="/Dashboard"
-          element={
-            session ? (
-              <Dashboard userId={session.user.id} />
-            ) : (
-              <Navigate to="/Auth" />
-            )
-          }
-        />
+        <Route path="/Dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/Auth" />} />
 
         {/* Planner */}
         <Route
@@ -374,12 +366,11 @@ function App() {
             )
           }
         />
- {/* Catch-all redirect */}
+        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/auth" />} />
-        
-      </Routes>  {/* ✅ Close Routes tag */}
-    </>  {/* ✅ Close fragment tag */}
-  );  {/* ✅ Close return statement */}
-}  {/* ✅ Close App function */}
+      </Routes>
+    </>
+  );
+}
 
 export default App;
