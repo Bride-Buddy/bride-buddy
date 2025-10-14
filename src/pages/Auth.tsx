@@ -4,6 +4,7 @@ import { Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/bride-buddy-logo-ring.png";
+import { TEST_MODE_CONFIG } from "@/config/testMode";
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,13 @@ const Auth = () => {
     }
   };
   return <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
+      {/* Test Mode Indicator */}
+      {TEST_MODE_CONFIG.showTestModeIndicator && (
+        <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
+          🧪 TEST MODE
+        </div>
+      )}
+      
       <div className="flex-1 flex items-center justify-center">
         <img src={logo} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
       </div>
@@ -69,7 +77,9 @@ const Auth = () => {
         </h2>
 
         {!isLogin && <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-xl p-4 mb-4 text-center">
-            <p className="text-purple-600 mb-1 font-normal text-base">Start Your 7-Day FREE Trial </p>
+            <p className="text-purple-600 mb-1 font-normal text-base">
+              Start Your {TEST_MODE_CONFIG.trialDurationDays}-Day FREE Trial 
+            </p>
             <p className="text-purple-500 text-xs">No credit card required • Cancel anytime</p>
           </div>}
 

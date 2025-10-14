@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
+import { getDaysRemainingInTrial, TEST_MODE_CONFIG } from "@/config/testMode";
 
 import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
@@ -90,7 +91,7 @@ function App() {
       const trialStart = new Date(profile.trial_start_date);
       const now = new Date();
       const trialEnd = new Date(trialStart);
-      trialEnd.setDate(trialEnd.getDate() + 7);
+      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
 
       const diffTime = trialEnd.getTime() - now.getTime();
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -99,10 +100,13 @@ function App() {
       const lastDismissed = localStorage.getItem("trialModalDismissed");
       const today = now.toDateString();
       
-      // Show modal at Day 5, 3, or 1 (unless dismissed today)
-      if ((daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && 
-          daysRemaining > 0 && 
-          lastDismissed !== today) {
+      // In test mode (1 day trial), show modal immediately when trial expires
+      // In production (7 day trial), show modal at Day 5, 3, or 1
+      const shouldShowModal = TEST_MODE_CONFIG.trialDurationDays === 1
+        ? daysRemaining <= 0
+        : (daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && daysRemaining > 0;
+      
+      if (shouldShowModal && lastDismissed !== today) {
         setShowTrialModal(true);
       }
 
@@ -145,7 +149,7 @@ function App() {
     if (!profile?.trial_start_date) return 0;
     const today = new Date();
     const trialEnd = new Date(profile.trial_start_date);
-    trialEnd.setDate(trialEnd.getDate() + 7);
+    trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
     const diffTime = trialEnd.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
@@ -153,7 +157,7 @@ function App() {
   const getTrialEndDate = () => {
     if (!profile?.trial_start_date) return "";
     const trialEnd = new Date(profile.trial_start_date);
-    trialEnd.setDate(trialEnd.getDate() + 7);
+    trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
     return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
   };
 
@@ -169,6 +173,13 @@ function App() {
   return (
     <>
       <Toaster />
+      
+      {/* Test Mode Indicator */}
+      {TEST_MODE_CONFIG.showTestModeIndicator && (
+        <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
+          🧪 TEST MODE ({TEST_MODE_CONFIG.trialDurationDays}-day trial)
+        </div>
+      )}
 
       {/* 💌 Modals */}
       {showTrialModal && (
