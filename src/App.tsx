@@ -361,11 +361,8 @@ function App() {
           }
         />
 
-        {/* Default redirect */}
-        <Route
-          path="/"
-          element={<Navigate to={session ? (needsOnboarding ? "/OnboardingChat" : "/chat") : "/Auth"} />}
-        />
+        {/* Default root path - always goes to Auth */}
+        <Route path="/" element={<Auth />} />
       </Routes>
     </>
   );

@@ -61,11 +61,20 @@ const Auth = () => {
 
       <div className="w-full space-y-4 pb-8">
         <h2
-          className="text-2xl font-bold text-center text-purple-400 mb-6"
+          className="text-2xl font-bold text-center text-purple-400 mb-2"
           style={{ fontFamily: "Quicksand, sans-serif" }}
         >
-          {isLogin ? "Welcome Back!" : "Create Your Account"}
+          {isLogin ? "Welcome Back, Returning User! 💕" : "Create Your Account"}
         </h2>
+
+        {!isLogin && (
+          <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-xl p-4 mb-4 text-center">
+            <p className="text-purple-600 font-bold text-lg mb-1">🎉 Start Your 7-Day FREE Trial!</p>
+            <p className="text-purple-500 text-sm">
+              Full VIP access • No credit card required • Cancel anytime
+            </p>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
           {!isLogin && (
@@ -101,7 +110,7 @@ const Auth = () => {
             className="w-full bg-gradient-to-r from-purple-300 to-blue-300 text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Sparkles className="animate-spin" size={20} /> : <Send size={20} />}
-            {loading ? "Sending..." : "Send Magic Link"}
+            {loading ? "Sending..." : isLogin ? "Send Login Link" : "Start Free Trial"}
           </button>
         </div>
 
