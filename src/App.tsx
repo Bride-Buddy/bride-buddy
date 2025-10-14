@@ -230,7 +230,10 @@ function App() {
             try {
               setPricingLoading(true);
               const { data, error } = await supabase.functions.invoke("create-checkout", {
-                body: { priceId: "price_1SI32gRjwBUM0ZBtdpllX6bZ" }
+                body: { priceId: "price_1SI3KoRjwBUM0ZBtUskqXPiY" },
+                headers: {
+                  Authorization: `Bearer ${session?.access_token}`,
+                },
               });
               
               if (error) throw error;
@@ -248,15 +251,36 @@ function App() {
               });
             } finally {
               setPricingLoading(false);
+              setShowPricingModal(false);
             }
           }}
-          onUntilIDoSelect={() => {
-            import("@/components/ui/use-toast").then(({ toast }) => {
-              toast({
-                title: "Coming Soon!",
-                description: "The 'Until I Do' plan will be available soon!",
+          onUntilIDoSelect={async () => {
+            try {
+              setPricingLoading(true);
+              const { data, error } = await supabase.functions.invoke("create-checkout", {
+                body: { priceId: "price_1SI3OoRjwBUM0ZBtVaxRCLxP" },
+                headers: {
+                  Authorization: `Bearer ${session?.access_token}`,
+                },
               });
-            });
+              
+              if (error) throw error;
+              if (data?.url) {
+                window.open(data.url, "_blank");
+              }
+            } catch (error) {
+              console.error("Checkout error:", error);
+              import("@/components/ui/use-toast").then(({ toast }) => {
+                toast({
+                  title: "Error",
+                  description: "Failed to start checkout. Please try again.",
+                  variant: "destructive",
+                });
+              });
+            } finally {
+              setPricingLoading(false);
+              setShowPricingModal(false);
+            }
           }}
           onClose={() => setShowPricingModal(false)}
         />
