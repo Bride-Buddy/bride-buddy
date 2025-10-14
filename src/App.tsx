@@ -7,6 +7,7 @@ import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
+import AuthRedirect from "./pages/AuthRedirect";
 import OnboardingChat from "./pages/OnboardingChat";
 import { TrialExpirationModal, PricingModal } from "./components/Modals";
 
@@ -152,6 +153,7 @@ function App() {
 
       <Routes>
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding" : "/chat"} />} />
+        <Route path="/auth-redirect" element={<AuthRedirect />} />
         <Route
           path="/onboarding"
           element={
