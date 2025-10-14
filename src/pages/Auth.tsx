@@ -70,9 +70,7 @@ const Auth = () => {
 
         {!isLogin && <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-xl p-4 mb-4 text-center">
             <p className="text-purple-600 mb-1 font-normal text-base">Start Your 7-Day FREE Trial </p>
-            <p className="text-purple-500 text-sm">
-              Full VIP access • No credit card required • Cancel anytime
-            </p>
+            <p className="text-purple-500 text-xs">No credit card required • Cancel anytime</p>
           </div>}
 
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
