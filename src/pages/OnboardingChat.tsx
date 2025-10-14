@@ -140,7 +140,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
     <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Bride Buddy" className="w-10 h-10 rounded-full bg-white p-1" />
+          <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
           <span className="text-white font-semibold text-sm">Bride Buddy</span>
         </div>
       </div>
