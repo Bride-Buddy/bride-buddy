@@ -97,7 +97,7 @@ const Auth = () => {
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
-      type: "email_otp",
+      type: "email",
     });
 
     setLoading(false);
