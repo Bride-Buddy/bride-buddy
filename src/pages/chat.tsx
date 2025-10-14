@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Send, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -57,11 +57,37 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
     ]);
   };
 
-  // unique chat session ID
-  const [sessionId] = useState(() => crypto.randomUUID());
+  // unique chat session ID - create session in database
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const createSession = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("Please log in to use chat");
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("chat_sessions")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setSessionId(data.id);
+      } catch (error) {
+        console.error("Error creating chat session:", error);
+        toast.error("Failed to start chat session");
+      }
+    };
+
+    createSession();
+  }, []);
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !sessionId) return;
 
     // ✅ Bonus: navigate to dashboard if typed
     if (text.toLowerCase().includes("dashboard")) {
@@ -166,11 +192,11 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
             className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
-            disabled={loading}
+            disabled={loading || !sessionId}
           />
           <button
             onClick={() => handleSendMessage(inputValue)}
-            disabled={loading || !inputValue.trim()}
+            disabled={loading || !inputValue.trim() || !sessionId}
             className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="text-white" size={20} />
