@@ -38,7 +38,7 @@ const Auth = () => {
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: "https://bride-buddy.lovable.app/AuthRedirect",
+        emailRedirectTo: `${window.location.origin}/AuthRedirect`,
         data: name ? { full_name: name } : undefined,
       },
     });
