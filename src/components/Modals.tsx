@@ -140,7 +140,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({
             className="w-full bg-gradient-to-r from-purple-400 to-blue-400 text-white py-6 px-6 rounded-xl hover:shadow-lg transition-all text-left border-4 border-purple-300"
           >
             <div className="flex items-start justify-between mb-2">
-              <div className="text-xl font-bold">"Until I Do" Plan</div>
+              <div className="text-xl font-bold">"Until I Do" One-Time Payment</div>
               <div className="text-sm bg-white bg-opacity-20 px-3 py-1 rounded-full font-semibold">BEST VALUE</div>
             </div>
             <div className="text-3xl font-bold mb-2">
@@ -153,7 +153,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({
                 "$349"
               )}
             </div>
-            <div className="text-sm opacity-90">One-time payment • Access until your wedding day</div>
+            <div className="text-sm opacity-90 mb-3">✨ Best if your wedding is 6-12+ months away</div>
+            <div className="text-sm opacity-90">Pay once, unlimited planning until you say "I Do"</div>
           </button>
 
           <button
@@ -161,8 +162,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({
             disabled={loading}
             className="w-full bg-white text-gray-700 py-6 px-6 rounded-xl hover:shadow-lg transition-all text-left border-2 border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div className="text-xl font-bold mb-2">Monthly Plan</div>
-            <div className="text-3xl font-bold text-purple-400 mb-2">
+            <div className="text-xl font-bold mb-2">Monthly Subscription - $29.99/month</div>
+            <div className="text-3xl font-bold text-purple-400 mb-3">
               {isEarlyBird ? (
                 <>
                   <span className="line-through text-gray-400 text-xl mr-2">$29.99</span>
@@ -173,8 +174,13 @@ export const PricingModal: React.FC<PricingModalProps> = ({
               )}
               <span className="text-base font-normal text-gray-600">/month</span>
             </div>
+            <div className="text-sm text-gray-600 mb-2">
+              ✨ Best if you're newly engaged or getting married soon (&lt; 6 months)
+            </div>
+            <div className="text-sm text-gray-600 mb-1">Perfect for short-term planning</div>
+            <div className="text-sm text-gray-600 mb-1">Cancel anytime, no commitment</div>
             <div className="text-sm text-gray-600">
-              {loading ? "Processing..." : "Billed monthly • Cancel anytime"}
+              {loading ? "Processing..." : "Great if your date isn't set yet"}
             </div>
           </button>
         </div>
