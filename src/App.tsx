@@ -189,7 +189,7 @@ function App() {
                 onNavigate={(view) => navigate(`/${view}`)} // ✅ React Router navigation
               />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/chat" />
             )
           }
         />
@@ -210,7 +210,7 @@ function App() {
                 onNavigate={(view) => navigate(`/${view}`)}
               />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/Dashboard" />
             )
           }
         />
@@ -220,9 +220,14 @@ function App() {
           path="/planner"
           element={
             session ? (
-              <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
+              <Planner
+                budget={profile?.budget || 0}
+                spent={profile?.spent || 0}
+                plannerCategories={profile?.plannerCategories || []}
+                onNavigate={(view) => navigate(`/${view}`)} // ✅ Back navigation
+              />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/Planner" />
             )
           }
         />
