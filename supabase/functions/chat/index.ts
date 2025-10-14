@@ -113,7 +113,7 @@ serve(async (req) => {
     }
 
     // Check subscription tier and message limits (server-side enforcement)
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("subscription_tier, messages_today, last_message_date, trial_start_date, full_name")
       .eq("user_id", user.id)
@@ -121,47 +121,25 @@ serve(async (req) => {
 
     console.log("👤 Profile fetch:", { found: !!profile, error: profileError?.message });
 
-    if (profileError) {
-      console.error("❌ Profile fetch error:", profileError);
+    // CRITICAL FIX: If profile doesn't exist, create it now
+    if (profileError?.code === 'PGRST116') { // No rows returned
+      console.log("🔧 Creating missing profile for user:", user.id);
+      const { data: newProfile, error: createError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: user.id,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+          phone_number: user.phone,
+        })
+        .select()
+        .single();
       
-      // CRITICAL FIX: If profile doesn't exist, create it now
-      if (profileError.code === 'PGRST116') { // No rows returned
-        console.log("🔧 Creating missing profile for user:", user.id);
-        const { data: newProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: user.id,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-            phone_number: user.phone,
-          })
-          .select()
-          .single();
-        
-        if (createError) {
-          console.error("❌ Failed to create profile:", createError);
-          return new Response(
-            JSON.stringify({
-              error: "Failed to create user profile",
-              details: createError.message,
-            }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            },
-          );
-        }
-        
-        // Also create timeline
-        await supabase.from("timeline").insert({ user_id: user.id });
-        console.log("✅ Profile and timeline created");
-        
-        // Use the new profile
-        profile = newProfile;
-      } else {
+      if (createError) {
+        console.error("❌ Failed to create profile:", createError);
         return new Response(
           JSON.stringify({
-            error: "Unable to verify subscription status",
-            details: profileError.message,
+            error: "Failed to create user profile",
+            details: createError.message,
           }),
           {
             status: 500,
@@ -169,10 +147,33 @@ serve(async (req) => {
           },
         );
       }
+      
+      // Also create timeline
+      await supabase.from("timeline").insert({ user_id: user.id });
+      console.log("✅ Profile and timeline created");
+      
+      // Use the new profile
+      profile = newProfile;
+    } else if (profileError || !profile) {
+      console.error("❌ Profile fetch error:", profileError);
+      return new Response(
+        JSON.stringify({
+          error: "Unable to verify subscription status",
+          details: profileError?.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Get user name early for trial expiration message
-    const userName = profile?.full_name?.split(" ")[0] || "beautiful bride";
+    // At this point, profile is guaranteed to exist (TypeScript assertion)
+    if (!profile) {
+      throw new Error("Profile unexpectedly null after creation/fetch");
+    }
+    
+    const userName = profile.full_name?.split(" ")[0] || "beautiful bride";
 
     // Enforce message limits for free tier
     if (profile.subscription_tier === "free") {
