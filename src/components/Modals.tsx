@@ -1,4 +1,5 @@
 import React from "react";
+import { getCurrentModeConfig, getTrialUnitLabel } from "@/config/testMode";
 
 interface TrialExpirationModalProps {
   daysRemaining: number;
@@ -28,18 +29,22 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
     if (daysRemaining <= 3) return "⚠️";
     return "⏰";
   };
+  const config = getCurrentModeConfig();
+  const unitLabel = getTrialUnitLabel();
+  const isTestMode1 = "trialDurationSeconds" in config;
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
         <div className="text-center mb-6">
           <div className="text-5xl mb-4">{getUrgencyEmoji()}</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            {daysRemaining <= 1 ? "FINAL DAY!" : "Your VIP Trial is Ending"}
+            {daysRemaining <= 1 ? "FINAL TIME!" : "Your VIP Trial is Ending"}
           </h2>
           <p className="text-gray-600">
             Your trial ends in{" "}
             <span className="font-bold text-purple-400">
-              {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}
+              {daysRemaining} {unitLabel}{daysRemaining !== 1 ? "s" : ""}
             </span>
           </p>
         </div>
@@ -52,9 +57,11 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
                 : "Upgrade now to keep the progress going!"}
             </span>
           </p>
-          <p className="text-sm text-gray-600 text-center mt-2">
-            Not interested? Downgrade to Basic Chat to continue access to wedding planning chatbot.
-          </p>
+          {!isTestMode1 && (
+            <p className="text-sm text-gray-600 text-center mt-2">
+              Not interested? Downgrade to Basic Chat to continue access to wedding planning chatbot.
+            </p>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -64,36 +71,43 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
           >
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-lg mb-1">Upgrade to Bride Buddy VIP</div>
+                <div className="text-lg mb-1">
+                  {isTestMode1 ? "Get Instant VIP Access" : "Upgrade to Bride Buddy VIP"}
+                </div>
                 <div className="text-sm font-normal opacity-90">Unlimited chat • Dashboard • Finance tracker</div>
               </div>
               <div className="text-xl">💎</div>
             </div>
           </button>
 
-          <button
-            onClick={onBasicClick}
-            className="w-full bg-gray-100 text-gray-700 py-5 px-6 rounded-xl font-bold hover:bg-gray-200 transition-all text-left border-2 border-gray-200"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-lg mb-1">Bride Buddy Basic</div>
-                <div className="text-sm font-normal text-gray-600">20 messages/day</div>
+          {!isTestMode1 && (
+            <button
+              onClick={onBasicClick}
+              className="w-full bg-gray-100 text-gray-700 py-5 px-6 rounded-xl font-bold hover:bg-gray-200 transition-all text-left border-2 border-gray-200"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-lg mb-1">Bride Buddy Basic</div>
+                  <div className="text-sm font-normal text-gray-600">20 messages/day</div>
+                </div>
+                <div className="text-xl">💬</div>
               </div>
-              <div className="text-xl">💬</div>
-            </div>
-          </button>
+            </button>
+          )}
         </div>
 
         <button
           onClick={onRemindLater}
           className="w-full text-gray-500 hover:text-gray-700 text-sm mt-3 transition-colors"
         >
-          Remind me tomorrow
+          Remind me later
         </button>
 
         <p className="text-xs text-gray-400 text-center mt-4">
-          Your account will downgrade automatically on {trialEndDate} at 00:00
+          {isTestMode1 
+            ? `Trial expires at ${trialEndDate}`
+            : `Your account will downgrade automatically on ${trialEndDate} at 00:00`
+          }
         </p>
       </div>
     </div>

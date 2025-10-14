@@ -199,11 +199,57 @@ function App() {
         <TrialExpirationModal
           daysRemaining={getDaysRemainingLocal()}
           trialEndDate={getTrialEndDateLocal()}
-          onUpgradeClick={() => {
+          onUpgradeClick={async () => {
+            const config = getCurrentModeConfig();
+            
+            // Test Mode 1: Instant VIP upgrade without Stripe
+            if (config.instantVIPUpgrade && !config.showStripeCheckout) {
+              try {
+                const { error } = await supabase
+                  .from("profiles")
+                  .update({ subscription_tier: "vip" })
+                  .eq("user_id", session?.user?.id);
+
+                if (error) throw error;
+
+                setShowTrialModal(false);
+                
+                import("@/components/ui/use-toast").then(({ toast }) => {
+                  toast({
+                    title: "Welcome to VIP! 💎",
+                    description: "You now have full access to all features!",
+                  });
+                });
+
+                if (session?.user?.id) {
+                  fetchUserProfile(session.user.id);
+                }
+              } catch (error) {
+                console.error("Error upgrading:", error);
+                import("@/components/ui/use-toast").then(({ toast }) => {
+                  toast({
+                    title: "Error",
+                    description: "Failed to upgrade. Please try again.",
+                    variant: "destructive",
+                  });
+                });
+              }
+              return;
+            }
+            
+            // Test Mode 2/3 & Production: Show pricing modal with Stripe
             setShowTrialModal(false);
             setShowPricingModal(true);
           }}
           onBasicClick={async () => {
+            const config = getCurrentModeConfig();
+            
+            // Test Mode 1: No basic tier
+            if (!config.hasBasicTier) {
+              setShowTrialModal(false);
+              return;
+            }
+            
             try {
               // Downgrade to free tier
               const { error } = await supabase

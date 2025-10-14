@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCurrentModeConfig } from "@/config/testMode";
 
 const AuthRedirect = () => {
   const navigate = useNavigate();
@@ -22,7 +23,15 @@ const AuthRedirect = () => {
         }
 
         if (session) {
-          // Check if user needs onboarding
+          const config = getCurrentModeConfig();
+          
+          // Test Mode 1 & 2: Skip onboarding, go straight to chat
+          if (config.skipEmailVerification && config.landingPage === "chat") {
+            navigate("/chat");
+            return;
+          }
+
+          // Test Mode 3 & Production: Check if user needs onboarding
           const { data: timelineData } = await supabase
             .from("timeline")
             .select("engagement_date, wedding_date")

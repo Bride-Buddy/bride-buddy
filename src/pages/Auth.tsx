@@ -32,6 +32,44 @@ const Auth = () => {
       toast.error("Please enter your email");
       return;
     }
+    
+    const config = getCurrentModeConfig();
+    
+    // Test Mode 1 & 2: Skip email verification completely
+    if (config.skipEmailVerification) {
+      setLoading(true);
+      
+      // Sign in with password (auto-generated for test mode)
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: "testmode123" // Test mode password
+      });
+      
+      // If user doesn't exist, sign them up
+      if (signInError) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: "testmode123",
+          options: {
+            data: name ? { full_name: name } : undefined
+          }
+        });
+        
+        if (signUpError) {
+          toast.error(signUpError.message);
+          setLoading(false);
+          return;
+        }
+        
+        toast.success("Account created! Redirecting...");
+      }
+      
+      setLoading(false);
+      // Auth state change will handle redirect
+      return;
+    }
+    
+    // Test Mode 3 & Production: Use magic link with email verification
     setLoading(true);
     const {
       error
