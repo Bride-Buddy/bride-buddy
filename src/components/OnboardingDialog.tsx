@@ -1,371 +1,236 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
-interface OnboardingDialogProps {
+interface Message {
+  type: "user" | "bot";
+  text: string;
+}
+
+interface OnboardingChatProps {
   userId: string;
   userName: string;
 }
 
-type OnboardingStep = "engagement" | "wedding" | "relationship" | "partner" | "tasks" | "complete";
+const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [sessionId, setSessionId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-const OnboardingDialog = ({ userId, userName }: OnboardingDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<OnboardingStep>("engagement");
-  const [engagementDate, setEngagementDate] = useState<Date>();
-  const [weddingDate, setWeddingDate] = useState<Date>();
-  const [relationshipYears, setRelationshipYears] = useState("");
-  const [partnerName, setPartnerName] = useState("");
-  const [partnerEmail, setPartnerEmail] = useState("");
-  const [partnerPhone, setPartnerPhone] = useState("");
-  const [completedTasks, setCompletedTasks] = useState("");
-  const { toast } = useToast();
+  const logoUrl =
+    "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
 
   useEffect(() => {
-    checkOnboardingStatus();
+    // Create a chat session for onboarding
+    const createSession = async () => {
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .insert({ user_id: userId, title: "Onboarding Session" })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating session:", error);
+        toast.error("Failed to start onboarding");
+        return;
+      }
+
+      setSessionId(data.id);
+    };
+
+    createSession();
   }, [userId]);
 
-  const checkOnboardingStatus = async () => {
-    const { data: timeline } = await supabase
-      .from('timeline')
-      .select('engagement_date, wedding_date')
-      .eq('user_id', userId)
-      .single();
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    if (!timeline?.engagement_date || !timeline?.wedding_date) {
-      setOpen(true);
-    }
+  const handleStartOnboarding = async () => {
+    setShowPrompt(false);
+    await handleSendMessage("Let's get this party planning started! 🎉", true);
   };
 
-  const handleNext = async () => {
+  const handleSendMessage = async (text: string, isSystemTrigger = false) => {
+    if (!text.trim() || !sessionId) return;
+
+    const userMessage: Message = { type: "user", text };
+    if (!isSystemTrigger) {
+      setMessages((prev) => [...prev, userMessage]);
+    }
+    setInputValue("");
+    setIsLoading(true);
+
     try {
-      if (step === "engagement") {
-        if (!engagementDate) {
-          toast({
-            title: "Please select a date",
-            description: "We need your engagement date to continue",
-            variant: "destructive",
-          });
-          return;
+      // Save user message
+      const { error: userMsgError } = await supabase.from("messages").insert({
+        session_id: sessionId,
+        role: "user",
+        content: text,
+      });
+
+      if (userMsgError) throw userMsgError;
+
+      // Get auth token for the edge function
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      // Call chat edge function with onboarding flag
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          sessionId,
+          message: text,
+          isOnboarding: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
+      }
+
+      // Fetch the latest bot message from the database
+      const { data: latestMessages, error: fetchError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .eq("role", "assistant")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (latestMessages && latestMessages.length > 0) {
+        const botMessage = latestMessages[0];
+        const botResponse: Message = {
+          type: "bot",
+          text: botMessage.content,
+        };
+        setMessages((prev) => [...prev, botResponse]);
+
+        // Check if onboarding is complete
+        if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
+          setTimeout(() => {
+            toast.success("Your personalized dashboard is ready! 🎉");
+            navigate("/chat");
+          }, 2000);
         }
-        setStep("wedding");
-      } else if (step === "wedding") {
-        if (!weddingDate) {
-          toast({
-            title: "Please select a date",
-            description: "We need your wedding date to continue",
-            variant: "destructive",
-          });
-          return;
-        }
-        setStep("relationship");
-      } else if (step === "relationship") {
-        if (!relationshipYears) {
-          toast({
-            title: "Please tell us",
-            description: "How long have you been together?",
-            variant: "destructive",
-          });
-          return;
-        }
-        setStep("partner");
-      } else if (step === "partner") {
-        // Partner is optional, can skip
-        setStep("tasks");
-      } else if (step === "tasks") {
-        // Save all data
-        await saveOnboardingData();
-        setStep("complete");
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const saveOnboardingData = async () => {
-    // Update timeline
-    const { error: timelineError } = await supabase
-      .from('timeline')
-      .update({
-        engagement_date: engagementDate?.toISOString().split('T')[0],
-        wedding_date: weddingDate?.toISOString().split('T')[0],
-      })
-      .eq('user_id', userId);
-
-    if (timelineError) throw timelineError;
-
-    // Update profile with relationship duration and partner info
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ 
-        relationship_years: relationshipYears,
-        partner_name: partnerName || null,
-        partner_email: partnerEmail || null,
-        partner_phone: partnerPhone || null
-      })
-      .eq('user_id', userId);
-
-    if (profileError) throw profileError;
-
-    // Send partner invitation if contact provided
-    if (partnerName && (partnerEmail || partnerPhone)) {
-      const { error: inviteError } = await supabase.functions.invoke('send-partner-invite', {
-        body: {
-          partnerName,
-          partnerEmail: partnerEmail || null,
-          partnerPhone: partnerPhone || null,
-        }
-      });
-
-      if (inviteError) {
-        console.error('Failed to send partner invitation:', inviteError);
-        toast({
-          title: "Partner invite pending",
-          description: "We'll send the invitation shortly",
-        });
+      console.error("Chat error:", error);
+      toast.error(error.message || "Sorry, I had trouble responding. Please try again.");
+      if (!isSystemTrigger) {
+        setMessages((prev) => prev.slice(0, -1));
       }
-    }
-
-    // Add completed tasks to checklist if provided
-    if (completedTasks.trim()) {
-      const tasks = completedTasks.split('\n').filter(t => t.trim());
-      const taskInserts = tasks.map(task => ({
-        user_id: userId,
-        task_name: task.trim(),
-        completed: true,
-        emoji: '✅'
-      }));
-
-      const { error: checklistError } = await supabase
-        .from('checklist')
-        .insert(taskInserts);
-
-      if (checklistError) throw checklistError;
-    }
-  };
-
-  const handleComplete = () => {
-    setOpen(false);
-    toast({
-      title: `Welcome, ${userName}! 🎉`,
-      description: "Your personalized account is ready! Everything is saved to YOUR private database - your tasks, budget, vendors, and progress. This is YOUR journey! 💍✨",
-      duration: 6000,
-    });
-  };
-
-  const getStepContent = () => {
-    switch (step) {
-      case "engagement":
-        return (
-          <div className="space-y-4">
-            <p className="text-lg">When is your engagement date? 💎</p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !engagementDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {engagementDate ? format(engagementDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={engagementDate}
-                  onSelect={setEngagementDate}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        );
-      
-      case "wedding":
-        return (
-          <div className="space-y-4">
-            <p className="text-lg">When is your wedding date? 💑❤️</p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !weddingDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {weddingDate ? format(weddingDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={weddingDate}
-                  onSelect={setWeddingDate}
-                  initialFocus
-                  disabled={(date) => date < new Date()}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        );
-      
-      case "relationship":
-        return (
-          <div className="space-y-4">
-            <Label htmlFor="relationship">
-              How long have you and your partner been together?
-            </Label>
-            <Input
-              id="relationship"
-              value={relationshipYears}
-              onChange={(e) => setRelationshipYears(e.target.value)}
-              placeholder="e.g., 3 years, 18 months, etc."
-              autoFocus
-            />
-          </div>
-        );
-      
-      case "partner":
-        return (
-          <div className="space-y-4">
-            <p className="text-lg font-medium">Want to invite your partner? 💕</p>
-            <p className="text-sm text-muted-foreground">
-              They'll receive an OTP to join and help with planning (optional)
-            </p>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="partnerName">Partner's Name</Label>
-                <Input
-                  id="partnerName"
-                  value={partnerName}
-                  onChange={(e) => setPartnerName(e.target.value)}
-                  placeholder="Their name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="partnerEmail">Email (optional)</Label>
-                <Input
-                  id="partnerEmail"
-                  type="email"
-                  value={partnerEmail}
-                  onChange={(e) => setPartnerEmail(e.target.value)}
-                  placeholder="partner@example.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="partnerPhone">Phone (optional)</Label>
-                <Input
-                  id="partnerPhone"
-                  type="tel"
-                  value={partnerPhone}
-                  onChange={(e) => setPartnerPhone(e.target.value)}
-                  placeholder="+1234567890"
-                />
-              </div>
-            </div>
-          </div>
-        );
-      
-      case "tasks":
-        return (
-          <div className="space-y-4">
-            <Label htmlFor="tasks">
-              What tasks have you already completed in your planning?
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              Enter each task on a new line (optional - you can skip this)
-            </p>
-            <textarea
-              id="tasks"
-              value={completedTasks}
-              onChange={(e) => setCompletedTasks(e.target.value)}
-              placeholder="Booked venue&#10;Sent save-the-dates&#10;Hired photographer"
-              className="w-full min-h-[120px] p-3 border rounded-md resize-none"
-              rows={5}
-            />
-          </div>
-        );
-      
-      case "complete":
-        return (
-          <div className="space-y-4 text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <p className="text-xl font-bold">All set, {userName}!</p>
-            <p className="text-muted-foreground">
-              Your personal account is ready! Everything is saved to YOUR database - from your checklist to vendors. 
-              Your progress, your data, your journey. Let's make your wedding day perfect! 💍✨
-            </p>
-          </div>
-        );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-center">
-            {step === "complete" ? "Welcome! 💍" : "Let's Get Started"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="py-6">
-          {getStepContent()}
+    <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
+      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt="Bride Buddy" className="w-10 h-10 rounded-full bg-white p-1" />
+          <span className="text-white font-semibold text-sm">Bride Buddy</span>
         </div>
-        {step !== "complete" ? (
-          <div className="flex gap-2">
-            {step !== "engagement" && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const steps: OnboardingStep[] = ["engagement", "wedding", "relationship", "partner", "tasks"];
-                  const currentIndex = steps.indexOf(step);
-                  if (currentIndex > 0) {
-                    setStep(steps[currentIndex - 1]);
-                  }
-                }}
-                className="flex-1"
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        {showPrompt && messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+                Welcome, {userName}! 💕
+              </h2>
+              <p className="text-gray-600">I'm so excited to help you plan your big day!</p>
+            </div>
+
+            <div className="w-full max-w-sm">
+              <button
+                onClick={handleStartOnboarding}
+                className="w-full bg-gradient-to-r from-purple-400 to-blue-400 text-white py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
               >
-                Back
-              </Button>
-            )}
-            <Button
-              onClick={handleNext}
-              className="flex-1 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
-            >
-              {step === "tasks" ? "Finish" : "Next"}
-            </Button>
+                Let's get this party planning started! 🎉
+              </button>
+            </div>
           </div>
         ) : (
-          <Button
-            onClick={handleComplete}
-            className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
-          >
-            Start Planning! 🎊
-          </Button>
+          <>
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                    msg.type === "user"
+                      ? "bg-purple-300 text-white rounded-br-sm"
+                      : "bg-white text-gray-800 shadow-md rounded-bl-sm"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white text-gray-800 shadow-md rounded-2xl rounded-bl-sm px-4 py-3">
+                  <div className="flex gap-1">
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      {!showPrompt && (
+        <div className="bg-white border-t border-gray-200 p-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Type your answer..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSendMessage(inputValue)}
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
+              disabled={isLoading}
+            />
+            <button
+              onClick={() => handleSendMessage(inputValue)}
+              disabled={isLoading || !inputValue.trim()}
+              className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="text-white" size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default OnboardingDialog;
+export default OnboardingChat;
