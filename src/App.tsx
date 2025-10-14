@@ -19,7 +19,6 @@ function App() {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [plannerCategories, setPlannerCategories] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
@@ -197,19 +196,17 @@ function App() {
 
         {/* Dashboard */}
         <Route
-          path="/Dashboard"
-          element={
-            session ? (
-              <Dashboard
-                userName={profile?.full_name || ""}
-                weddingDate={profile?.wedding_date ? new Date(profile.wedding_date) : new Date()}
-                engagementDate={new Date()}
-                budget={0}
-                spent={0}
-                weddingVibeEmojis={[]}
-                plannerCategories={[]}
-                onNavigate={(view) => navigate(`/${view}`)}
-              />
+         <Dashboard
+  userName={profile?.full_name || ""}
+  weddingDate={new Date(profile?.wedding_date || new Date())}
+  engagementDate={new Date(profile?.engagement_date || new Date())}
+  budget={profile?.budget || 10000}
+  spent={profile?.spent || 0}
+  weddingVibeEmojis={["💍", "🌸", "💖"]}
+  plannerCategories={plannerCategories}
+  onNavigate={(view) => navigate(`/${view}`)}
+/>
+
             ) : (
               <Navigate to="/Auth" />
             )
