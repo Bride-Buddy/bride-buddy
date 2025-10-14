@@ -129,12 +129,16 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
     <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
       {/* HEADER */}
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Bride Buddy" className="w-12 h-12 drop-shadow-lg" />
-          <span className="text-white font-semibold text-lg" style={{ fontFamily: "Quicksand, sans-serif" }}>
-            Bride Buddy
-          </span>
-        </div>
+        <button 
+          onClick={() => setMessages([])}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src={logo} 
+            alt="Bride Buddy" 
+            className="w-[100px] h-[100px] object-contain drop-shadow-lg cursor-pointer" 
+          />
+        </button>
         <button
           onClick={() => onNavigate("dashboard")}
           className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
