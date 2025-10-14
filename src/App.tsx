@@ -361,32 +361,32 @@ function App() {
         {/* Login Page */}
         <Route
           path="/auth"
-          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding-chat" : "/chat"} />}
+          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
         />
 
         {/* Email verification page */}
-        <Route path="/email-verification" element={<email-verification />} />
+        <Route path="/email-verification" element={<EmailVerification />} />
 
         {/* Post-login redirect handler */}
-        <Route path="/auth-redirect" element={<auth-redirect />} />
+        <Route path="/auth-redirect" element={<AuthRedirect />} />
 
         {/* Onboarding for new users */}
         <Route
-          path="/onboarding-chat"
+          path="/OnboardingChat"
           element={
             session && profile ? (
-              <onboarding-chat userId={session.user.id} userName={profile.full_name || ""} />
+              <OnboardingChat userId={session.user.id} userName={profile.full_name || ""} />
             ) : (
-              <Navigate to="/auth" />
+              <Navigate to="/Auth" />
             )
           }
         />
 
         {/* Main chat interface */}
-        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/auth" />} />
+        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/Auth" />} />
 
         {/* Dashboard */}
-        <Route path="/dashboard" element={session ? <dashboard userId={session.user.id} /> : <Navigate to="/auth" />} />
+        <Route path="/Dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/Auth" />} />
 
         {/* Planner */}
         <Route
