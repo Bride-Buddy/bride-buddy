@@ -206,3 +206,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                       >
                         {marker.type === 'car' ? (
                           <div className="text-2xl" style={{ transform: 'scaleX(-1)' }}>🚗</div>
+                        ) : marker.type === 'category' ? (
+                          <div className="text-xl">{marker.emoji}</div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
