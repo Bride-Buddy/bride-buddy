@@ -15,7 +15,7 @@ const Auth = () => {
   // Check session on mount — if user already logged in, go straight to app
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/Onboard");
+      if (session) navigate("/chat");
     });
 
     const {
