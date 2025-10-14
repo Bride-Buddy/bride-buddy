@@ -9,12 +9,15 @@ const AuthRedirect = () => {
   useEffect(() => {
     const handleAuthRedirect = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (error) {
           console.error("Auth redirect error:", error);
           toast.error("Authentication failed");
-          navigate("/auth");
+          navigate("/Auth");
           return;
         }
 
@@ -27,16 +30,16 @@ const AuthRedirect = () => {
             .single();
 
           if (!timelineData?.engagement_date || !timelineData?.wedding_date) {
-            navigate("/onboarding");
+            navigate("/OnboardingChat");
           } else {
             navigate("/chat");
           }
         } else {
-          navigate("/auth");
+          navigate("/Auth");
         }
       } catch (error) {
         console.error("Unexpected error:", error);
-        navigate("/auth");
+        navigate("/Auth");
       }
     };
 
