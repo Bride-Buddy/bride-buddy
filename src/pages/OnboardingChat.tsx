@@ -14,7 +14,14 @@ interface OnboardingChatProps {
   userId: string;
   userName: string;
 }
-
+const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
+  const location = useLocation();
+  const stateUserId = location.state?.userId;
+  const stateUserName = location.state?.userName;
+  
+  // Use state if available, otherwise use props
+  const userId = stateUserId || propUserId;
+  const userName = stateUserName || propUserName;
 const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
