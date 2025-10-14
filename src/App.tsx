@@ -375,12 +375,22 @@ function App() {
           }
         />
 
-<Routes>
-  <Route path="/" element={<Auth />} />  // ← This is your "home page"
-  <Route path="/auth-redirect" element={<AuthRedirect />} />
-  <Route path="/onboarding" element={<OnboardingChat />} />
-  <Route path="/chat" element={<Chat />} />
-  <Route path="/dashboard" element={<Dashboard />} />
-</Routes>
-
+{/* Default redirect - if user goes to root */}
+<Route 
+  path="/" 
+  element={
+    session ? (
+      <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />
+    ) : (
+      <Navigate to="/Auth" />
+    )
+  } 
+/>
+// ✅ Clean, standard URLs
+<Route path="/auth" element={<Auth />} />
+<Route path="/auth-redirect" element={<AuthRedirect />} />
+<Route path="/onboarding" element={<OnboardingChat />} />
+<Route path="/chat" element={<Chat />} />
+<Route path="/dashboard" element={<Dashboard />} />
+<Route path="/planner" element={<Planner />} />
 export default App;
