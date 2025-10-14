@@ -15,12 +15,13 @@ const Auth = () => {
   // --- Listen for auth state changes ---
   useEffect(() => {
     const {
-      data: {
-        subscription
-      }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate("/AuthRedirect"); // 🔁 Send all logged-in users to redirect logic
+        const config = getCurrentModeConfig();
+
+        // Mode 1, 2, 3: All go through AuthRedirect
+        navigate("/AuthRedirect");
       }
     });
     return () => subscription.unsubscribe();
@@ -32,56 +33,56 @@ const Auth = () => {
       toast.error("Please enter your email");
       return;
     }
-    
+
     const config = getCurrentModeConfig();
-    
+
     // Test Mode 1 & 2: Skip email verification completely
     if (config.skipEmailVerification) {
       setLoading(true);
-      
+
       // Sign in with password (auto-generated for test mode)
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: "testmode123" // Test mode password
+        password: "testmode123", // Test mode password
       });
-      
+
       // If user doesn't exist, sign them up
       if (signInError) {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password: "testmode123",
           options: {
-            data: name ? { full_name: name } : undefined
-          }
+            data: name ? { full_name: name } : undefined,
+          },
         });
-        
+
         if (signUpError) {
           toast.error(signUpError.message);
           setLoading(false);
           return;
         }
-        
+
         toast.success("Account created! Redirecting...");
       }
-      
+
       setLoading(false);
       // Auth state change will handle redirect
       return;
     }
-    
+
     // Test Mode 3 & Production: Use magic link with email verification
     setLoading(true);
-    const {
-      error
-    } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/AuthRedirect`,
-        data: name ? {
-          full_name: name
-        } : undefined
-      }
+        data: name
+          ? {
+              full_name: name,
+            }
+          : undefined,
+      },
     });
     setLoading(false);
     if (error) {
@@ -92,65 +93,99 @@ const Auth = () => {
       // Navigate to verification page
       navigate("/EmailVerification", {
         state: {
-          email
-        }
+          email,
+        },
       });
     }
   };
   const config = getCurrentModeConfig();
-  
-  return <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
+
+  return (
+    <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
       {/* Test Mode Indicator */}
       {showTestModeIndicator && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
           🧪 TEST MODE
         </div>
       )}
-      
+
       <div className="flex-1 flex items-center justify-center">
         <img src={logo} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
       </div>
 
       <div className="w-full space-y-4 pb-8">
-        <h2 className="text-2xl font-bold text-center text-purple-400 mb-2" style={{
-        fontFamily: "Quicksand, sans-serif"
-      }}>
+        <h2
+          className="text-2xl font-bold text-center text-purple-400 mb-2"
+          style={{
+            fontFamily: "Quicksand, sans-serif",
+          }}
+        >
           {isLogin ? "Welcome Back, Returning User! 💕" : "Create Your Account"}
         </h2>
 
-        {!isLogin && <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-xl p-4 mb-4 text-center">
+        {!isLogin && (
+          <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-xl p-4 mb-4 text-center">
             <p className="text-purple-600 mb-1 font-normal text-base">
-              Start Your {(() => {
-                if ('trialDurationDays' in config) return `${config.trialDurationDays}-Day`;
-                if ('trialDurationMinutes' in config) return `${config.trialDurationMinutes}-Minute`;
-                if ('trialDurationSeconds' in config) return `${config.trialDurationSeconds}-Second`;
-                return '7-Day';
-              })()} FREE Trial 
+              Start Your{" "}
+              {(() => {
+                if ("trialDurationDays" in config) return `${config.trialDurationDays}-Day`;
+                if ("trialDurationMinutes" in config) return `${config.trialDurationMinutes}-Minute`;
+                if ("trialDurationSeconds" in config) return `${config.trialDurationSeconds}-Second`;
+                return "7-Day";
+              })()}{" "}
+              FREE Trial
             </p>
             <p className="text-purple-500 text-xs">No credit card required • Cancel anytime</p>
-          </div>}
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
-          {!isLogin && <div>
+          {!isLogin && (
+            <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">Name</label>
-              <input type="text" placeholder="Enter your name" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700" disabled={loading} />
-            </div>}
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+                disabled={loading}
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">Email</label>
-            <input type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} onKeyPress={e => e.key === "Enter" && handleMagicLink()} className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700" disabled={loading} />
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleMagicLink()}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+              disabled={loading}
+            />
           </div>
 
-          <button onClick={handleMagicLink} disabled={loading} className="w-full bg-gradient-to-r from-purple-300 to-blue-300 text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+          <button
+            onClick={handleMagicLink}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-300 to-blue-300 text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+          >
             {loading ? <Sparkles className="animate-spin" size={20} /> : <Send size={20} />}
             {loading ? "Sending..." : isLogin ? "Send Login Link" : "Start Free Trial"}
           </button>
         </div>
 
-        <button onClick={() => setIsLogin(!isLogin)} className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors" disabled={loading}>
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors"
+          disabled={loading}
+        >
           {isLogin ? "Don't have an account? Sign up here" : "Already have an account? Sign in here"}
         </button>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Auth;
