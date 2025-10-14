@@ -5,7 +5,9 @@
 // TEST_MODE = 1: No email verification, 30-second trial, instant VIP upgrade (no Stripe)
 // TEST_MODE = 2: No email verification, 30-minute trial, Stripe checkout at trial end
 // TEST_MODE = 3: Full email verification, complete onboarding flow, production-ready testing
-export const TEST_MODE = 2; // Change to 0 for production, 1/2/3 for testing
+
+type TestModeValue = 0 | 1 | 2 | 3;
+export const TEST_MODE: TestModeValue = 2; // Change to 0 for production, 1/2/3 for testing
 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
@@ -52,14 +54,16 @@ export const TEST_MODE_CONFIG = {
 
 // Get current mode configuration
 export const getCurrentModeConfig = () => {
-  if (TEST_MODE === 1) {
-    return TEST_MODE_CONFIG.mode1;
-  } else if (TEST_MODE === 2) {
-    return TEST_MODE_CONFIG.mode2;
-  } else if (TEST_MODE === 3) {
-    return TEST_MODE_CONFIG.mode3;
-  } else {
-    return TEST_MODE_CONFIG.production;
+  switch (TEST_MODE as TestModeValue) {
+    case 1:
+      return TEST_MODE_CONFIG.mode1;
+    case 2:
+      return TEST_MODE_CONFIG.mode2;
+    case 3:
+      return TEST_MODE_CONFIG.mode3;
+    case 0:
+    default:
+      return TEST_MODE_CONFIG.production;
   }
 };
 

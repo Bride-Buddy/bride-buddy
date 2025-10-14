@@ -49,7 +49,9 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      // Navigate to verification page instead of showing toast
+      // Show message to check email in same browser
+      toast.success("Check your email! Click the link in the same browser to continue.");
+      // Navigate to verification page
       navigate("/EmailVerification", {
         state: {
           email
