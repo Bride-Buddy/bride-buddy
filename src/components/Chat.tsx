@@ -28,7 +28,9 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<"overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null>(null);
+  const [dashboardView, setDashboardView] = useState<
+    "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null
+  >(null);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
@@ -41,26 +43,23 @@ const Chat = ({ userId }: ChatProps) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, trial_start_date, subscription_tier, messages_today, last_message_date')
-        .eq('user_id', userId)
+        .from("profiles")
+        .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date")
+        .eq("user_id", userId)
         .single();
-      
+
       if (profile) {
         setUserName(profile.full_name || "");
         setTrialStartDate(profile.trial_start_date);
         setSubscriptionTier(profile.subscription_tier || "trial");
-        
+
         // Check if we need to reset messages_today
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split("T")[0];
         const lastMessageDate = profile.last_message_date;
-        
+
         if (lastMessageDate !== today) {
           // Reset messages for new day
-          await supabase
-            .from('profiles')
-            .update({ messages_today: 0, last_message_date: today })
-            .eq('user_id', userId);
+          await supabase.from("profiles").update({ messages_today: 0, last_message_date: today }).eq("user_id", userId);
           setMessagesToday(0);
         } else {
           setMessagesToday(profile.messages_today || 0);
@@ -74,12 +73,12 @@ const Chat = ({ userId }: ChatProps) => {
           (position) => {
             setUserLocation({
               latitude: position.coords.latitude,
-              longitude: position.coords.longitude
+              longitude: position.coords.longitude,
             });
           },
           (error) => {
             console.log("Geolocation not available:", error);
-          }
+          },
         );
       }
     };
@@ -162,7 +161,7 @@ const Chat = ({ userId }: ChatProps) => {
       return;
     }
 
-    const typedMessages: Message[] = (data || []).map(msg => ({
+    const typedMessages: Message[] = (data || []).map((msg) => ({
       id: msg.id,
       role: msg.role as "user" | "assistant",
       content: msg.content,
@@ -176,7 +175,7 @@ const Chat = ({ userId }: ChatProps) => {
     if (!input.trim() || !sessionId || loading) return;
 
     // Check message limits for free tier
-    if (subscriptionTier === 'free' && messagesToday >= 20) {
+    if (subscriptionTier === "free" && messagesToday >= 20) {
       toast({
         title: "Message Limit Reached 💝",
         description: "You've used all 20 messages today! Upgrade to VIP for unlimited messages ✨",
@@ -190,26 +189,24 @@ const Chat = ({ userId }: ChatProps) => {
     setLoading(true);
 
     try {
-      const { error: insertError } = await supabase
-        .from("messages")
-        .insert({
-          session_id: sessionId,
-          role: "user",
-          content: userMessage,
-        });
+      const { error: insertError } = await supabase.from("messages").insert({
+        session_id: sessionId,
+        role: "user",
+        content: userMessage,
+      });
 
       if (insertError) throw insertError;
 
       // Increment message count for free tier users
-      if (subscriptionTier === 'free') {
+      if (subscriptionTier === "free") {
         const newCount = messagesToday + 1;
         await supabase
-          .from('profiles')
-          .update({ 
+          .from("profiles")
+          .update({
             messages_today: newCount,
-            last_message_date: new Date().toISOString().split('T')[0]
+            last_message_date: new Date().toISOString().split("T")[0],
           })
-          .eq('user_id', userId);
+          .eq("user_id", userId);
         setMessagesToday(newCount);
       }
 
@@ -224,7 +221,7 @@ const Chat = ({ userId }: ChatProps) => {
       if (error) throw error;
 
       await loadMessages();
-      
+
       // Check if AI triggered early adopter offer
       const latestMessages = await supabase
         .from("messages")
@@ -232,7 +229,7 @@ const Chat = ({ userId }: ChatProps) => {
         .eq("session_id", sessionId)
         .order("created_at", { ascending: false })
         .limit(1);
-      
+
       if (latestMessages.data && latestMessages.data[0]?.content.includes("EARLY_ADOPTER_OFFER")) {
         setShowEarlyAdopterOffer(true);
       }
@@ -254,7 +251,10 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (action: string, view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard") => {
+  const handleQuickReply = (
+    action: string,
+    view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard",
+  ) => {
     if (view === "dashboard") {
       navigate("/dashboard");
     } else if (view) {
@@ -275,16 +275,14 @@ const Chat = ({ userId }: ChatProps) => {
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
       <PersonalizedWelcome userId={userId} />
       <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
-      
+
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
           <Card className="p-8 text-center bg-gradient-to-br from-card to-accent/10 border-none shadow-[var(--shadow-elegant)]">
             <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
             {isReturningUser && userName ? (
               <>
-                <h2 className="text-2xl font-bold mb-2">
-                  Hey {userName}! 💕 Ready to keep planning?
-                </h2>
+                <h2 className="text-2xl font-bold mb-2">Hey {userName}! 💕 Ready to keep planning?</h2>
                 <p className="text-muted-foreground mb-6">
                   I've saved all your progress. Let's pick up right where we left off! ✨
                 </p>
@@ -344,19 +342,15 @@ const Chat = ({ userId }: ChatProps) => {
               <>
                 <h2 className="text-2xl font-bold mb-2">Welcome to Your Wedding Planning Assistant</h2>
                 <p className="text-muted-foreground">
-                  I'm here to help you plan every detail of your special day. Ask me anything about venues, themes, budgets, or timelines!
+                  I'm here to help you plan every detail of your special day. Ask me anything about venues, themes,
+                  budgets, or timelines!
                 </p>
               </>
             )}
           </Card>
         ) : (
           messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
+            <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               <Card
                 className={`max-w-[80%] p-4 ${
                   message.role === "user"
@@ -391,7 +385,10 @@ const Chat = ({ userId }: ChatProps) => {
                   <li>🔒 Lock in this rate for LIFE</li>
                   <li>❌ Cancel anytime, keep your rate forever</li>
                 </ul>
-                <Button className="w-full" onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}>
+                <Button
+                  className="w-full"
+                  onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}
+                >
                   Choose Monthly
                 </Button>
               </div>
@@ -409,7 +406,10 @@ const Chat = ({ userId }: ChatProps) => {
                   <li>💍 One payment, complete journey</li>
                   <li>🛡️ Postponement protection included</li>
                 </ul>
-                <Button className="w-full" onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}>
+                <Button
+                  className="w-full"
+                  onClick={() => toast({ title: "Coming Soon!", description: "Stripe integration in progress ✨" })}
+                >
                   Choose Until "I Do"
                 </Button>
               </div>
@@ -435,11 +435,7 @@ const Chat = ({ userId }: ChatProps) => {
             disabled={loading || !input.trim()}
             className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
           >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>
         </div>
       </Card>
