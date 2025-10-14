@@ -40,7 +40,7 @@ const Auth = () => {
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: "https://bride-buddy.lovable.app/OnboardingChat",
+        emailRedirectTo: "https://bride-buddy.lovable.app/AuthRedirect",
         data: name ? { full_name: name } : undefined,
       },
     });
