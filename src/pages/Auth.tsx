@@ -21,7 +21,7 @@ const Auth = () => {
         const config = getCurrentModeConfig();
 
         // Mode 1, 2, 3: All go through AuthRedirect
-        navigate("/AuthRedirect");
+        navigate("/auth-redirect");
       }
     });
     return () => subscription.unsubscribe();
@@ -76,7 +76,7 @@ const Auth = () => {
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/AuthRedirect`,
+        emailRedirectTo: `${window.location.origin}/auth-redirect`,
         data: name
           ? {
               full_name: name,
