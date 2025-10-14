@@ -1,84 +1,112 @@
 import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
+import { Toaster } from "@/components/ui/toaster";
 import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
+import Auth from "./pages/Auth";
 import { TrialExpirationModal, PricingModal } from "./components/Modals";
-import NewUserSignup from "./pages/NewUserSignup";
+import OnboardingDialog from "./components/OnboardingDialog";
 
 function App() {
-  // App state management
-  const [userStatus, setUserStatus] = useState<"new-user" | "returning-user">("returning-user");
-  const [view, setView] = useState<"chat" | "dashboard" | "planner">("chat");
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
-  // User data - fetch from Lovable database
-  const [userName, setUserName] = useState("");
-  const [userTier, setUserTier] = useState<"vip-trial" | "vip-paid" | "free">("free");
-  const [trialStartDate, setTrialStartDate] = useState<Date | null>(null);
-  const [weddingDate, setWeddingDate] = useState<Date | null>(null);
-  const [engagementDate, setEngagementDate] = useState<Date | null>(null);
-  const [budget, setBudget] = useState(0);
-  const [spent, setSpent] = useState(0);
-  const [weddingVibeEmojis, setWeddingVibeEmojis] = useState<string[]>([]);
-  const [plannerCategories, setPlannerCategories] = useState<any[]>([]);
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      }
+    );
 
-  // Helper functions for trial management
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check if should show trial modal
+  useEffect(() => {
+    if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
+      const trialStart = new Date(profile.trial_start_date);
+      const today = new Date();
+      const trialEnd = new Date(trialStart);
+      trialEnd.setDate(trialEnd.getDate() + 7);
+      const diffTime = trialEnd.getTime() - today.getTime();
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (daysRemaining <= 1 && daysRemaining > 0) {
+        setShowTrialModal(true);
+      }
+    }
+  }, [profile]);
+
   const getDaysRemainingInTrial = () => {
-    if (!trialStartDate) return 0;
+    if (!profile?.trial_start_date) return 0;
     const today = new Date();
-    const trialEnd = new Date(trialStartDate);
+    const trialEnd = new Date(profile.trial_start_date);
     trialEnd.setDate(trialEnd.getDate() + 7);
     const diffTime = trialEnd.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const getTrialEndDate = () => {
-    if (!trialStartDate) return "";
-    const trialEnd = new Date(trialStartDate);
+    if (!profile?.trial_start_date) return "";
+    const trialEnd = new Date(profile.trial_start_date);
     trialEnd.setDate(trialEnd.getDate() + 7);
     return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
   };
 
-  // Check if should show trial modal (day 6 or 7)
-  useEffect(() => {
-    if (userStatus === "returning-user" && userTier === "vip-trial") {
-      const daysRemaining = getDaysRemainingInTrial();
-      if (daysRemaining <= 1 && daysRemaining > 0) {
-        setShowTrialModal(true);
-      }
-    }
-  }, [userStatus, userTier]);
-
-  // TODO: Fetch user data from Lovable database on component mount
-  useEffect(() => {
-    // Fetch user data here
-    // Example:
-    // const userData = await fetchUserData();
-    // setUserName(userData.name);
-    // setUserTier(userData.tier);
-    // setWeddingDate(new Date(userData.weddingDate));
-    // etc...
-  }, []);
-
-  // NEW USER FLOW
-  if (userStatus === "new-user") {
+  if (loading) {
     return (
-      <NewUserSignup
-        onSignupComplete={() => {
-          setUserStatus("returning-user");
-          setView("chat");
-        }}
-        onNavigateToSignIn={() => {
-          setUserStatus("returning-user");
-        }}
-      />
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+      </div>
     );
   }
 
-  // RETURNING USER FLOW
   return (
     <>
+      <Toaster />
+      
       {/* Modals */}
       {showTrialModal && (
         <TrialExpirationModal
@@ -90,7 +118,6 @@ function App() {
           }}
           onBasicClick={() => {
             setShowTrialModal(false);
-            // Downgrade user to free tier in database
           }}
           onClose={() => setShowTrialModal(false)}
         />
@@ -100,43 +127,75 @@ function App() {
         <PricingModal
           isEarlyBird={true}
           onMonthlySelect={() => {
-            // Connect to Stripe monthly plan
             setShowPricingModal(false);
           }}
           onUntilIDoSelect={() => {
-            // Connect to Stripe one-time plan
             setShowPricingModal(false);
           }}
           onClose={() => setShowPricingModal(false)}
         />
       )}
 
-      {/* Main Views */}
-      {view === "chat" && weddingDate && (
-        <Chat userName={userName} userTier={userTier} onNavigate={(newView) => setView(newView as any)} />
-      )}
-
-      {view === "dashboard" && weddingDate && engagementDate && (
-        <Dashboard
-          userName={userName}
-          weddingDate={weddingDate}
-          engagementDate={engagementDate}
-          budget={budget}
-          spent={spent}
-          weddingVibeEmojis={weddingVibeEmojis}
-          plannerCategories={plannerCategories}
-          onNavigate={(newView) => setView(newView as any)}
+      {/* Onboarding Dialog */}
+      {session?.user && profile && (
+        <OnboardingDialog 
+          userId={session.user.id} 
+          userName={profile.full_name || ""} 
         />
       )}
 
-      {view === "planner" && (
-        <Planner
-          budget={budget}
-          spent={spent}
-          plannerCategories={plannerCategories}
-          onNavigate={(newView) => setView(newView as any)}
+      <Routes>
+        <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/chat" />} />
+        <Route
+          path="/chat"
+          element={
+            session ? (
+              <Chat
+                userName={profile?.full_name || ""}
+                userTier={profile?.subscription_tier || "free"}
+                onNavigate={(view) => window.location.href = `/${view}`}
+              />
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
         />
-      )}
+        <Route
+          path="/dashboard"
+          element={
+            session ? (
+              <Dashboard
+                userName={profile?.full_name || ""}
+                weddingDate={profile?.wedding_date ? new Date(profile.wedding_date) : new Date()}
+                engagementDate={new Date()}
+                budget={0}
+                spent={0}
+                weddingVibeEmojis={[]}
+                plannerCategories={[]}
+                onNavigate={(view) => window.location.href = `/${view}`}
+              />
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
+        <Route
+          path="/planner"
+          element={
+            session ? (
+              <Planner
+                budget={0}
+                spent={0}
+                plannerCategories={[]}
+                onNavigate={(view) => window.location.href = `/${view}`}
+              />
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
+        <Route path="/" element={<Navigate to={session ? "/chat" : "/auth"} />} />
+      </Routes>
     </>
   );
 }
