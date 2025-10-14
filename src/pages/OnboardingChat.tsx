@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/bride-buddy-logo-new.png";
 import { useNavigate, useLocation } from "react-router-dom";
+
 interface Message {
   type: "user" | "bot";
   text: string;
@@ -14,7 +15,7 @@ interface OnboardingChatProps {
   userName: string;
 }
 
-const onboarding-chat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
+const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, userName: propUserName }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -49,7 +50,7 @@ const onboarding-chat: React.FC<OnboardingChatProps> = ({ userId: propUserId, us
     };
 
     initSession();
-  }, [propUserId]);
+  }, [userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -163,7 +164,7 @@ const onboarding-chat: React.FC<OnboardingChatProps> = ({ userId: propUserId, us
           <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
             <div className="text-center space-y-3">
               <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
-                Welcome, {propUserName}! 💕
+                Welcome, {userName}! 💕
               </h2>
               <p className="text-gray-600">I'm so excited to help you plan your big day!</p>
             </div>
