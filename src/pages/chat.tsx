@@ -210,3 +210,4 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
 };
 
 export default shortChat;
+Delete the file src/pages/chat.tsx
