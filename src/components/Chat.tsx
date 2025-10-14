@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
-import { TrialBanner } from "./TrialBanner";
+
 import { PersonalizedWelcome } from "./PersonalizedWelcome";
 
 interface Message {
@@ -255,11 +255,6 @@ const Chat = ({ userId }: ChatProps) => {
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
       <PersonalizedWelcome userId={userId} />
-      <TrialBanner 
-        trialStartDate={trialStartDate} 
-        subscriptionTier={subscriptionTier}
-        onUpgrade={handleUpgrade}
-      />
       <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
       
       <div className="flex-1 overflow-y-auto space-y-4 p-4">

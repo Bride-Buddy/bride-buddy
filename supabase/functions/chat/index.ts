@@ -136,11 +136,51 @@ serve(async (req) => {
       }
     }
 
-    // Trial expired check
+    // Trial expiration handling
     if (profile.subscription_tier === "trial" && profile.trial_start_date) {
       const trialStart = new Date(profile.trial_start_date);
       const daysSinceTrial = Math.floor((Date.now() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
 
+      // Day 7: Send expiration message and downgrade to free
+      if (daysSinceTrial === 7) {
+        const expirationMessage = `⏰ **Your free trial expires today!**
+
+You have two options, ${userName}:
+
+✨ **Upgrade to VIP** - Save all your progress and continue unlimited planning!
+  • Unlimited messages & full access
+  • Keep all your vendors, tasks, and timeline
+  • Continue where you left off
+
+💝 **Downgrade to Basic (Free)** - Lose all your data
+  • Limited to 20 messages/day
+  • All vendors, checklists, and timeline will be deleted
+  • Start fresh with basic features
+
+What would you like to do? 💕`;
+
+        // Insert expiration message
+        await supabase.from("messages").insert({
+          session_id: sessionId,
+          role: "assistant",
+          content: expirationMessage,
+        });
+
+        // Downgrade to free tier (this will trigger data cleanup via database trigger)
+        await supabase
+          .from("profiles")
+          .update({ subscription_tier: "free" })
+          .eq("user_id", user.id);
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // After day 7: Block if still on trial (shouldn't happen due to trigger)
       if (daysSinceTrial > 7) {
         return new Response(
           JSON.stringify({
