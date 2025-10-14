@@ -12,16 +12,20 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
+  // --- Listen for auth state changes ---
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/AuthRedirect");
+      if (session) {
+        navigate("/AuthRedirect"); // 🔁 Send all logged-in users to redirect logic
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // --- Magic Link Handler ---
+  // --- Handle Magic Link Sign-In / Sign-Up ---
   const handleMagicLink = async () => {
     if (!email.trim()) {
       toast.error("Please enter your email");
@@ -44,7 +48,7 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Check your email for a magic sign-in link!");
+      toast.success(`Check your inbox! We've sent a magic link to ${email}`);
     }
   };
 
