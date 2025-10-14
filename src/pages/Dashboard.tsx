@@ -25,18 +25,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
   const loadDashboardData = async () => {
     try {
       // Fetch profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+      const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", userId).single();
 
       // Fetch timeline
-      const { data: timelineData } = await supabase
-        .from("timeline")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+      const { data: timelineData } = await supabase.from("timeline").select("*").eq("user_id", userId).single();
 
       // Fetch checklist
       const { data: checklistData } = await supabase
@@ -46,10 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
         .order("due_date", { ascending: true });
 
       // Fetch vendors
-      const { data: vendorData } = await supabase
-        .from("vendors")
-        .select("*")
-        .eq("user_id", userId);
+      const { data: vendorData } = await supabase.from("vendors").select("*").eq("user_id", userId);
 
       setProfile(profileData);
       setTimeline(timelineData);
@@ -81,7 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
   };
 
   const getTodaysFocus = () => {
-    return checklist.filter(task => !task.completed).slice(0, 4);
+    return checklist.filter((task) => !task.completed).slice(0, 4);
   };
 
   if (loading) {
@@ -93,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
   }
 
   const totalBudget = vendors.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
-  const spent = vendors.filter(v => v.paid).reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+  const spent = vendors.filter((v) => v.paid).reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
   const daysUntilWedding = getDaysUntilWedding();
   const timelineProgress = getTimelineProgress();
   const todaysFocus = getTodaysFocus();
@@ -111,7 +100,26 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
             <p className="text-gray-600 mt-2">Here's your wedding planning overview</p>
           </div>
         </div>
+        // Find the header section in Dashboard.tsx (around line 120)
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+              Welcome back, {userName}! 💕
+            </h1>
+            <p className="text-gray-600 mt-2">Here's your wedding planning overview</p>
+          </div>
 
+          {/* 👇 ADD THIS SIGN OUT BUTTON */}
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/auth";
+            }}
+            className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Days Until Wedding */}
@@ -151,7 +159,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
             </div>
           </Card>
         </div>
-
         {/* Today's Focus */}
         <Card className="p-6 bg-white shadow-lg">
           <div className="flex items-center gap-3 mb-6">
@@ -176,7 +183,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
             )}
           </div>
         </Card>
-
         {/* Action Buttons */}
         <Card className="p-6 bg-white shadow-lg">
           <div className="flex gap-4">
