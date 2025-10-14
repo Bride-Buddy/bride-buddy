@@ -3,7 +3,13 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
-import { getDaysRemainingInTrial, TEST_MODE_CONFIG } from "@/config/testMode";
+import {
+  getCurrentModeConfig,
+  showTestModeIndicator,
+  getDaysRemainingInTrial as getTrialDaysRemaining,
+  getTrialEndDate as formatTrialEndDate,
+  getTrialUnitLabel,
+} from "@/config/testMode";
 
 import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
@@ -90,36 +96,27 @@ function App() {
     if (profile?.subscription_tier === "trial" && profile?.trial_start_date) {
       const trialStart = new Date(profile.trial_start_date);
       const now = new Date();
-      const trialEnd = new Date(trialStart);
-      if (TEST_MODE_CONFIG.showTestModeIndicator) {
-        // Add minutes in test mode
-        trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
-      } else {
-        // Add days in production
-        trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
-      }
+      const trialEnd = formatTrialEndDate(trialStart);
+      const config = getCurrentModeConfig();
 
-      const diffTime = trialEnd.getTime() - now.getTime();
-      const daysRemaining = TEST_MODE_CONFIG.showTestModeIndicator
-        ? Math.ceil(diffTime / (1000 * 60)) // Minutes in test mode
-        : Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Days in production
+      const diffTime = new Date(trialEnd).getTime() - now.getTime();
+      const daysRemaining = getTrialDaysRemaining(profile.trial_start_date);
 
       // Check localStorage for last dismissal
       const lastDismissed = localStorage.getItem("trialModalDismissed");
       const today = now.toDateString();
       
-      // In test mode (30 minute trial), show modal when <= 5 minutes remain or expired
-      // In production (7 day trial), show modal at Day 5, 3, or 1
-      const shouldShowModal = TEST_MODE_CONFIG.showTestModeIndicator
-        ? daysRemaining <= 5 // Show when 5 minutes or less remaining
+      // Determine when to show modal based on test mode
+      const shouldShowModal = showTestModeIndicator
+        ? daysRemaining <= 5 // Show when 5 units or less remaining
         : (daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && daysRemaining > 0;
       
       if (shouldShowModal && lastDismissed !== today) {
         setShowTrialModal(true);
       }
 
-      // Show toast notifications
-      if (lastTrialNotification !== today) {
+      // Show toast notifications (only in production mode)
+      if (!showTestModeIndicator && lastTrialNotification !== today) {
         import("@/components/ui/use-toast").then(({ toast }) => {
           if (daysRemaining === 6) {
             toast({
@@ -153,36 +150,20 @@ function App() {
     }
   }, [profile, lastTrialNotification]);
 
-  const getDaysRemainingInTrial = () => {
+  const getDaysRemainingLocal = () => {
     if (!profile?.trial_start_date) return 0;
-    const today = new Date();
-    const trialEnd = new Date(profile.trial_start_date);
-    
-    if (TEST_MODE_CONFIG.showTestModeIndicator) {
-      // Add minutes in test mode
-      trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
-      const diffTime = trialEnd.getTime() - today.getTime();
-      return Math.ceil(diffTime / (1000 * 60)); // Return minutes
-    } else {
-      // Add days in production
-      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
-      const diffTime = trialEnd.getTime() - today.getTime();
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Return days
-    }
+    return getTrialDaysRemaining(profile.trial_start_date);
   };
 
-  const getTrialEndDate = () => {
+  const getTrialEndDateLocal = () => {
     if (!profile?.trial_start_date) return "";
-    const trialEnd = new Date(profile.trial_start_date);
+    const trialEnd = formatTrialEndDate(new Date(profile.trial_start_date));
+    const config = getCurrentModeConfig();
     
-    if (TEST_MODE_CONFIG.showTestModeIndicator) {
-      // Add minutes in test mode
-      trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
-      return trialEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    if ('trialDurationSeconds' in config || 'trialDurationMinutes' in config) {
+      return new Date(trialEnd).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     } else {
-      // Add days in production
-      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
-      return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+      return new Date(trialEnd).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
     }
   };
 
@@ -200,17 +181,23 @@ function App() {
       <Toaster />
       
       {/* Test Mode Indicator */}
-      {TEST_MODE_CONFIG.showTestModeIndicator && (
+      {showTestModeIndicator && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
-          🧪 TEST MODE ({TEST_MODE_CONFIG.trialDurationMinutes}-minute trial)
+          🧪 TEST MODE {(() => {
+            const config = getCurrentModeConfig();
+            if ('trialDurationSeconds' in config) return `(${config.trialDurationSeconds}-second trial)`;
+            if ('trialDurationMinutes' in config) return `(${config.trialDurationMinutes}-minute trial)`;
+            if ('trialDurationDays' in config) return `(${config.trialDurationDays}-day trial)`;
+            return '';
+          })()}
         </div>
       )}
 
       {/* 💌 Modals */}
       {showTrialModal && (
         <TrialExpirationModal
-          daysRemaining={getDaysRemainingInTrial()}
-          trialEndDate={getTrialEndDate()}
+          daysRemaining={getDaysRemainingLocal()}
+          trialEndDate={getTrialEndDateLocal()}
           onUpgradeClick={() => {
             setShowTrialModal(false);
             setShowPricingModal(true);
