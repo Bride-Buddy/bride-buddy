@@ -1,218 +1,200 @@
-import React from "react";
-import { LayoutDashboard, CheckSquare, ArrowLeft, DollarSign, Calendar } from "lucide-react";
-
-interface Task {
-  task: string;
-  completed: boolean;
-}
-
-interface PlannerCategory {
-  category: string;
-  emoji: string;
-  vendor: string;
-  phone: string;
-  tasks: Task[];
-}
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, DollarSign, TrendingUp, ListChecks } from "lucide-react";
 
 interface DashboardProps {
-  userName: string;
-  weddingDate: Date;
-  engagementDate: Date;
-  budget: number;
-  spent: number;
-  weddingVibeEmojis: string[];
-  plannerCategories: PlannerCategory[];
-  onNavigate: (view: string) => void;
+  userId: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({
-  userName,
-  weddingDate,
-  engagementDate,
-  budget,
-  spent,
-  weddingVibeEmojis,
-  plannerCategories,
-  onNavigate,
-}) => {
-  // --- Calculations ---
-  const getDaysUntilWedding = () => {
+const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any>(null);
+  const [checklist, setChecklist] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [userId]);
+
+  const loadDashboardData = async () => {
+    try {
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      // Fetch timeline
+      const { data: timelineData } = await supabase
+        .from("timeline")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      // Fetch checklist
+      const { data: checklistData } = await supabase
+        .from("checklist")
+        .select("*")
+        .eq("user_id", userId)
+        .order("due_date", { ascending: true });
+
+      // Fetch vendors
+      const { data: vendorData } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("user_id", userId);
+
+      setProfile(profileData);
+      setTimeline(timelineData);
+      setChecklist(checklistData || []);
+      setVendors(vendorData || []);
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDaysUntilWedding = (): number => {
+    if (!timeline?.wedding_date) return 0;
     const today = new Date();
-    const diffTime = weddingDate.getTime() - today.getTime();
+    const wedding = new Date(timeline.wedding_date);
+    const diffTime = wedding.getTime() - today.getTime();
     return Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
   };
 
-  const getTimelineProgress = () => {
+  const getTimelineProgress = (): number => {
+    if (!timeline?.engagement_date || !timeline?.wedding_date) return 0;
+    const engagement = new Date(timeline.engagement_date);
+    const wedding = new Date(timeline.wedding_date);
     const today = new Date();
-    const totalTime = weddingDate.getTime() - engagementDate.getTime();
-    const elapsed = today.getTime() - engagementDate.getTime();
-    return Math.min(Math.max((elapsed / totalTime) * 100, 0), 100);
+    const totalTime = wedding.getTime() - engagement.getTime();
+    const elapsed = today.getTime() - engagement.getTime();
+    return Math.min(Math.max(Math.round((elapsed / totalTime) * 100), 0), 100);
   };
 
   const getTodaysFocus = () => {
-    const incompleteTasks: { task: string; emoji: string; vendor: string; phone: string }[] = [];
-
-    plannerCategories.forEach((cat) => {
-      if (cat.tasks) {
-        cat.tasks.forEach((task) => {
-          if (!task.completed) {
-            incompleteTasks.push({
-              task: task.task,
-              emoji: cat.emoji,
-              vendor: cat.vendor,
-              phone: cat.phone,
-            });
-          }
-        });
-      }
-    });
-
-    return incompleteTasks.slice(0, 4);
+    return checklist.filter(task => !task.completed).slice(0, 4);
   };
 
-  // --- Values ---
-  const daysUntil = getDaysUntilWedding();
-  const progress = getTimelineProgress();
-  const todaysTasks = getTodaysFocus();
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+      </div>
+    );
+  }
 
-  // --- UI ---
+  const totalBudget = vendors.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+  const spent = vendors.filter(v => v.paid).reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+  const daysUntilWedding = getDaysUntilWedding();
+  const timelineProgress = getTimelineProgress();
+  const todaysFocus = getTodaysFocus();
+  const userName = profile?.full_name?.split(" ")[0] || "Beautiful Bride";
+
   return (
-    <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl">
-      <div className="h-full overflow-y-auto bg-gradient-to-b from-purple-100 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-          <button
-            onClick={() => onNavigate("chat")}
-            className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
-          >
-            <ArrowLeft className="text-white" size={20} />
-          </button>
-          <span className="text-white font-semibold">Dashboard</span>
-          <div className="w-9"></div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+              Welcome back, {userName}! 💕
+            </h1>
+            <p className="text-gray-600 mt-2">Here's your wedding planning overview</p>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="p-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Days Until Wedding */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-            <div className="flex justify-center gap-2 mb-4">
-              {weddingVibeEmojis.length > 0 ? (
-                weddingVibeEmojis.map((emoji, idx) => (
-                  <span key={idx} className="text-3xl">
-                    {emoji}
-                  </span>
-                ))
-              ) : (
-                <span className="text-3xl">💍</span>
-              )}
+          <Card className="p-6 bg-white shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <Calendar className="text-purple-400" size={24} />
+              <h3 className="font-semibold text-gray-700">Wedding Countdown</h3>
             </div>
-            <h2 className="text-4xl font-bold text-purple-400 mb-2">{daysUntil}</h2>
-            <p className="text-gray-600 font-medium">days until “I Do”</p>
-          </div>
-
-          {/* Budget Summary (clickable) */}
-          <div
-            className="bg-white rounded-2xl shadow-lg p-6 cursor-pointer hover:shadow-xl transition-all"
-            onClick={() => onNavigate("planner")}
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <DollarSign size={20} className="text-purple-400" />
-              Budget Overview
-            </h3>
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-400">${spent.toLocaleString()}</div>
-                <div className="text-sm text-gray-500 mt-1">of ${budget.toLocaleString()} spent</div>
-              </div>
-
-              <div className="relative h-4 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="absolute h-full bg-gradient-to-r from-purple-300 to-blue-300 transition-all duration-500"
-                  style={{ width: `${Math.min((spent / budget) * 100, 100)}%` }}
-                ></div>
-              </div>
-
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>${Math.max(budget - spent, 0).toLocaleString()} remaining</span>
-                <span>{Math.round((spent / budget) * 100)}% used</span>
-              </div>
-
-              <div className="text-xs text-center text-purple-400 font-medium mt-4">
-                Tap to view full wedding planner →
-              </div>
+            <div className="text-center">
+              <p className="text-5xl font-bold text-purple-400">{daysUntilWedding}</p>
+              <p className="text-gray-600">Days Until Your Big Day! 💍</p>
             </div>
-          </div>
+          </Card>
 
-          {/* Wedding Timeline */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Calendar size={20} className="text-purple-400" />
-              Wedding Timeline
-            </h3>
-            <div className="space-y-4">
-              <div className="relative h-16 bg-gray-100 rounded-lg overflow-visible px-4">
-                <div
-                  className="absolute top-1/2 left-0 w-full h-1 bg-gray-200"
-                  style={{ transform: "translateY(-50%)" }}
-                ></div>
-
-                <div
-                  className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-purple-300 to-blue-300 transition-all duration-500"
-                  style={{ width: `${progress}%`, transform: "translateY(-50%)" }}
-                ></div>
-
-                <div
-                  className="absolute top-1/2 text-2xl z-10 transition-all duration-500"
-                  style={{ left: `${progress}%`, transform: "translate(-50%, -50%)" }}
-                >
-                  🚗
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-500 text-center">
-                {Math.round(progress)}% of your engagement journey completed
-              </p>
+          {/* Budget Overview */}
+          <Card className="p-6 bg-white shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <DollarSign className="text-purple-400" size={24} />
+              <h3 className="font-semibold text-gray-700">Budget Status</h3>
             </div>
-          </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-purple-400">${spent.toLocaleString()}</p>
+              <p className="text-gray-500 text-sm">of ${totalBudget.toLocaleString()}</p>
+              <p className="text-green-600 font-medium mt-1">${(totalBudget - spent).toLocaleString()} remaining</p>
+            </div>
+          </Card>
 
-          {/* Focus Tasks */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <CheckSquare size={20} className="text-purple-400" />
-              Your Focus Today
-            </h3>
-
-            {todaysTasks.length > 0 ? (
-              <div className="space-y-3">
-                {todaysTasks.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{item.emoji}</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800 mb-1">{item.task}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.vendor} • {item.phone}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 text-center">You’re all caught up for today! 🎉</p>
-            )}
-
-            <button
-              onClick={() => onNavigate("planner")}
-              className="w-full mt-4 text-sm text-purple-400 hover:text-purple-500 font-medium transition-colors"
-            >
-              View full wedding planner →
-            </button>
-          </div>
+          {/* Timeline Progress */}
+          <Card className="p-6 bg-white shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <TrendingUp className="text-purple-400" size={24} />
+              <h3 className="font-semibold text-gray-700">Planning Progress</h3>
+            </div>
+            <div className="space-y-3">
+              <Progress value={timelineProgress} className="h-3" />
+              <p className="text-center text-gray-600 text-sm">{timelineProgress}% Complete</p>
+            </div>
+          </Card>
         </div>
+
+        {/* Today's Focus */}
+        <Card className="p-6 bg-white shadow-lg">
+          <div className="flex items-center gap-3 mb-6">
+            <ListChecks className="text-purple-400" size={24} />
+            <h3 className="text-xl font-semibold text-gray-700">Today's Focus</h3>
+          </div>
+          <div className="space-y-3">
+            {todaysFocus.length > 0 ? (
+              todaysFocus.map((task) => (
+                <div key={task.id} className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                  <div className="w-5 h-5 rounded-full border-2 border-purple-300 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800">{task.task_name}</p>
+                    {task.due_date && (
+                      <p className="text-sm text-gray-500 mt-1">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-8">No tasks scheduled for today! 🎉</p>
+            )}
+          </div>
+        </Card>
+
+        {/* Action Buttons */}
+        <Card className="p-6 bg-white shadow-lg">
+          <div className="flex gap-4">
+            <Button
+              onClick={() => navigate("/chat")}
+              className="flex-1 bg-purple-400 hover:bg-purple-500 text-white py-6 text-lg"
+            >
+              💬 Chat with Bride Buddy
+            </Button>
+            <Button
+              onClick={() => navigate("/planner")}
+              variant="outline"
+              className="flex-1 border-purple-300 text-purple-400 hover:bg-purple-50 py-6 text-lg"
+            >
+              📋 View Full Planner
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );

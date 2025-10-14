@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 
 import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
-import BrideDashboard from "./components/BrideDashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
 import AuthRedirect from "./pages/AuthRedirect";
@@ -334,7 +333,7 @@ function App() {
           path="/Dashboard"
           element={
             session ? (
-              <BrideDashboard userId={session.user.id} />
+              <Dashboard userId={session.user.id} />
             ) : (
               <Navigate to="/Auth" />
             )
