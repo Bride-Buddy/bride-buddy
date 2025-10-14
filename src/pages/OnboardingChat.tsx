@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send } from "lucide-react";
+import { Send, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -120,9 +120,8 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         // Check if onboarding is complete
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
-            toast.success("Your personalized dashboard is ready! 🎉");
-            navigate("/chat");
-          }, 2000);
+            toast.success("Your personalized dashboard is ready! Click the dashboard icon in the top right to view it 💙");
+          }, 1000);
         }
       }
     } catch (error: any) {
@@ -141,8 +140,14 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
-          <span className="text-white font-semibold text-sm">Bride Buddy</span>
         </div>
+        <button
+          onClick={() => navigate("/chat")}
+          className="p-2 hover:bg-white/20 rounded-full transition-all"
+          aria-label="Go to Dashboard"
+        >
+          <LayoutDashboard className="text-white" size={24} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
