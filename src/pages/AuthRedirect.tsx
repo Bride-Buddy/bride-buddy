@@ -1,3 +1,4 @@
+// AuthRedirect.tsx - REPLACE ENTIRE FILE:
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,30 +23,34 @@ const AuthRedirect = () => {
           return;
         }
 
-        if (session) {
-          const config = getCurrentModeConfig();
-          
-          // Test Mode 1 & 2: Skip onboarding, go straight to chat
-          if (config.skipEmailVerification && config.landingPage === "chat") {
-            navigate("/chat");
-            return;
-          }
-
-          // Test Mode 3 & Production: Check if user needs onboarding
-          const { data: timelineData } = await supabase
-            .from("timeline")
-            .select("engagement_date, wedding_date")
-            .eq("user_id", session.user.id)
-            .single();
-
-          if (!timelineData?.engagement_date || !timelineData?.wedding_date) {
-            navigate("/OnboardingChat", { state: { isNewUser: true } });
-          } else {
-            navigate("/chat");
-          }
-        } else {
+        if (!session) {
           navigate("/Auth");
+          return;
         }
+
+        const config = getCurrentModeConfig();
+
+        // MODE 1: Skip DB, go straight to OnboardingChat (not OnboardChat)
+        if (config.skipDatabaseCreation && config.autoRedirectToOnboarding) {
+          navigate("/OnboardingChat");
+          return;
+        }
+
+        // MODE 2 & 3: Check if user is new (needs onboarding)
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", session.user.id)
+          .single();
+
+        // New user → OnboardingChat
+        if (!profileData) {
+          navigate("/OnboardingChat");
+          return;
+        }
+
+        // Returning user → Dashboard
+        navigate("/Dashboard");
       } catch (error) {
         console.error("Unexpected error:", error);
         navigate("/Auth");
@@ -59,7 +64,7 @@ const AuthRedirect = () => {
     <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
       <div className="text-center space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400 mx-auto"></div>
-        <p className="text-gray-600">Redirecting you...</p>
+        <p className="text-gray-600">Setting up your wedding planning journey... 💕</p>
       </div>
     </div>
   );
