@@ -436,6 +436,28 @@ IMPORTANT:
 Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     }
 
+    console.log("💬 Preparing AI request with system prompt length:", systemPrompt.length);
+
+    // Store user message
+    const { error: userMsgError } = await supabase.from("messages").insert({
+      session_id: sessionId,
+      role: "user",
+      content: message,
+    });
+
+    if (userMsgError) {
+      console.error("❌ Failed to store user message:", userMsgError);
+      throw userMsgError;
+    }
+
+    console.log("✅ User message stored");
+
+    // Build conversation for AI (include history)
+    const conversationHistory = messages?.map((msg: any) => ({
+      role: msg.role,
+      content: msg.content,
+    })) || [];
+
     // Define vendor search tool
     const tools = [
       {
@@ -525,8 +547,21 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     }
 
     const aiResponse = await response.json();
-    let assistantMessage = aiResponse.choices[0].message.content;
-    const toolCalls = aiResponse.choices[0].message.tool_calls;
+    console.log("🤖 AI response received:", { hasChoices: !!aiResponse.choices, choicesLength: aiResponse.choices?.length });
+    
+    if (!aiResponse.choices || aiResponse.choices.length === 0) {
+      console.error("❌ No choices in AI response:", aiResponse);
+      throw new Error("AI returned no response choices");
+    }
+    
+    let assistantMessage = aiResponse.choices[0].message?.content || "";
+    const toolCalls = aiResponse.choices[0].message?.tool_calls;
+    
+    console.log("📝 Assistant message:", { 
+      messageLength: assistantMessage.length, 
+      hasToolCalls: !!toolCalls,
+      toolCallsCount: toolCalls?.length || 0
+    });
 
     // Handle tool calls (vendor search)
     if (toolCalls && toolCalls.length > 0) {
@@ -712,7 +747,12 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       content: cleanedMessage,
     });
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error("❌ Failed to save assistant message:", insertError);
+      throw insertError;
+    }
+
+    console.log("✅ Assistant message saved successfully");
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -725,10 +765,13 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       timestamp: new Date().toISOString(),
     });
 
-    // Return safe generic message to client
+    // Return helpful error message to client
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
     return new Response(
       JSON.stringify({
-        error: "Unable to process your request. Please try again.",
+        error: "I'm having trouble connecting right now 💙 Please try again in a moment!",
+        details: errorMessage,
       }),
       {
         status: 500,

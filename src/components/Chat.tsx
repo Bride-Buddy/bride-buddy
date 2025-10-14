@@ -210,6 +210,8 @@ const Chat = ({ userId }: ChatProps) => {
         setMessagesToday(newCount);
       }
 
+      console.log("📤 Sending message to chat function:", { sessionId, messageLength: userMessage.length });
+
       const { data, error } = await supabase.functions.invoke("chat", {
         body: {
           sessionId,
@@ -218,8 +220,19 @@ const Chat = ({ userId }: ChatProps) => {
         },
       });
 
-      if (error) throw error;
+      console.log("📥 Chat function response:", { data, error });
 
+      if (error) {
+        console.error("❌ Chat function error:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error("❌ Chat function returned error:", data.error);
+        throw new Error(data.error);
+      }
+
+      console.log("✅ Chat function succeeded, loading messages...");
       await loadMessages();
 
       // Check if AI triggered early adopter offer
