@@ -146,11 +146,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({
             <div className="text-3xl font-bold mb-2">
               {isEarlyBird ? (
                 <>
-                  <span className="line-through text-white text-opacity-60 text-xl mr-2">$299</span>
+                  <span className="line-through text-white text-opacity-60 text-xl mr-2">$349</span>
                   $249
                 </>
               ) : (
-                "$299"
+                "$349"
               )}
             </div>
             <div className="text-sm opacity-90">One-time payment • Access until your wedding day</div>
