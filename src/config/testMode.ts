@@ -1,21 +1,23 @@
 // Test Mode Configuration
-// Set to true for testing without email verification and accelerated trial
-// Set to false for production
+// Set to true for testing with accelerated trial timing (30 minutes instead of 7 days)
+// Set to false for production (7-day trial)
+// NOTE: Test mode does NOT skip email verification or authentication flows
+// It ONLY accelerates the trial period so you can test the complete user journey faster
 export const TEST_MODE = true;
 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
-  // Skip email verification in test mode
-  skipEmailVerification: TEST_MODE,
+  // Always use real email verification (never skip in test or production)
+  skipEmailVerification: false,
   
-  // Trial duration in days (7 for production)
+  // Trial duration in days for production
   trialDurationDays: 7,
   
   // Trial duration in minutes for test mode (30 minutes for testing)
   trialDurationMinutes: 30,
   
-  // Auto-login after signup in test mode
-  autoLoginAfterSignup: TEST_MODE,
+  // Always use real authentication flow (never auto-login)
+  autoLoginAfterSignup: false,
   
   // Show test mode indicator
   showTestModeIndicator: TEST_MODE,
