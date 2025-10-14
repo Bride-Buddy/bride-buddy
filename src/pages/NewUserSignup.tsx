@@ -1,96 +1,189 @@
 import React, { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, LayoutDashboard } from "lucide-react";
 
-interface NewUserSignupProps {
-  onSignupComplete?: () => void;
-  onNavigateToSignIn?: () => void;
+interface Message {
+  type: "user" | "bot";
+  text: string;
 }
 
-const NewUserSignup: React.FC<NewUserSignupProps> = ({ onSignupComplete, onNavigateToSignIn }) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+interface SuggestedPrompt {
+  text: string;
+  action: string;
+}
+
+interface ChatProps {
+  userName: string;
+  userTier: "vip-trial" | "vip-paid" | "free";
+  lastTopic?: string;
+  onNavigate: (view: string) => void;
+  onPromptClick?: (action: string) => void;
+}
+
+const Chat: React.FC<ChatProps> = ({
+  userName,
+  userTier,
+  lastTopic = "bridesmaid dresses",
+  onNavigate,
+  onPromptClick,
+}) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
 
   const logoUrl =
     "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
 
-  const handleSendVerification = () => {
-    if (!name.trim() || !email.trim()) {
-      alert("Please enter your name and email");
+  const suggestedPrompts: SuggestedPrompt[] = [
+    { text: "Show me my progress", action: "dashboard" },
+    { text: "Pick up where we left off", action: "continue" },
+    { text: "Just need to vent", action: "vent" },
+    { text: "To-do today", action: "todo" },
+  ];
+
+  const isFreeUser = userTier === "free";
+  const isVIPAccess = userTier === "vip-trial" || userTier === "vip-paid";
+
+  const handlePromptClick = (prompt: SuggestedPrompt) => {
+    if (prompt.action === "dashboard") {
+      onNavigate("dashboard");
       return;
     }
 
-    // In Lovable, this will trigger magic link authentication
-    console.log("Sending verification to:", email);
+    let botResponse = "";
+    if (prompt.action === "continue") {
+      botResponse = `Let's keep our progress going! Do you want to continue discussing *${lastTopic}* or is there something else on your mind?`;
+    } else if (prompt.action === "vent") {
+      botResponse = "That's exactly what I'm here for! Let it out, you can't hurt my feelings 😌";
+    } else if (prompt.action === "todo") {
+      botResponse =
+        "Here's what I have lined up for you today! 📋\n\n💐 Call florist\nBlooms & Petals • (555) 678-9012\n\n🍰 Send final guest count\n142 guests • 73 chicken, 42 fish, 10 beef, 17 vegetarian\n\n🍽️ Confirm rehearsal dinner\nOlive Garden • (555) 456-7890 • June 19, 6:30pm\n\nI'm here if you need help with any of these!";
+    }
 
-    // Call the callback when signup is complete
-    if (onSignupComplete) {
-      onSignupComplete();
+    setMessages([
+      { type: "user", text: prompt.text },
+      { type: "bot", text: botResponse },
+    ]);
+
+    if (onPromptClick) {
+      onPromptClick(prompt.action);
     }
   };
 
+  const handleSendMessage = (text: string) => {
+    if (!text.trim()) return;
+
+    const userMessage: Message = { type: "user", text };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
+
+    // Simulate bot response - in production, this would call Claude API
+    setTimeout(() => {
+      const botResponse = `I hear you! Let me help you with that. Tell me more about what you're thinking regarding "${text}"?`;
+      setMessages((prev) => [...prev, { type: "bot", text: botResponse }]);
+    }, 1000);
+  };
+
   return (
-    <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
-      <div className="flex-1 flex items-center justify-center">
-        <img src={logoUrl} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
+    <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
+      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt="Bride Buddy" className="w-10 h-10 rounded-full bg-white p-1" />
+          <span className="text-white font-semibold text-sm">Bride Buddy</span>
+        </div>
+        {isVIPAccess && (
+          <button
+            onClick={() => onNavigate("dashboard")}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
+          >
+            <LayoutDashboard className="text-white" size={20} />
+          </button>
+        )}
       </div>
 
-      <div className="w-full space-y-4 pb-8">
-        <h2
-          className="text-2xl font-bold text-center text-purple-400 mb-2"
-          style={{ fontFamily: "Quicksand, sans-serif" }}
-        >
-          Create Your Account
-        </h2>
-        <p className="text-center text-gray-600 text-sm mb-6">
-          Unlock your wedding planning assistant — 7 days free ✨
-        </p>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
+            <div className="text-center space-y-3">
+              {!isFreeUser ? (
+                <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+                  Welcome back, {userName}! 💕
+                </h2>
+              ) : (
+                <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+                  Hi there! 💕
+                </h2>
+              )}
+            </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">Name</label>
+            <div className="w-full max-w-sm space-y-4">
+              <div className="bg-white rounded-2xl shadow-lg p-4">
+                <input
+                  type="text"
+                  placeholder={
+                    isFreeUser
+                      ? "Ask me anything about wedding planning..."
+                      : "Tell me where you want to start today, or click a suggested prompt below"
+                  }
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+                />
+              </div>
+
+              {!isFreeUser && (
+                <div className="space-y-3">
+                  {suggestedPrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handlePromptClick(prompt)}
+                      className="w-full bg-white text-purple-400 py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm font-medium border-2 border-purple-100 hover:border-purple-300"
+                    >
+                      {prompt.text}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                  msg.type === "user"
+                    ? "bg-purple-300 text-white rounded-br-sm"
+                    : "bg-white text-gray-800 shadow-md rounded-bl-sm"
+                }`}
+              >
+                <p className="text-sm whitespace-pre-line">{msg.text}</p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {messages.length > 0 && (
+        <div className="bg-white border-t border-gray-200 p-4">
+          <div className="flex items-center gap-2">
             <input
               type="text"
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+              placeholder="Type a message..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
             />
+            <button
+              onClick={() => handleSendMessage(inputValue)}
+              className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md"
+            >
+              <Send className="text-white" size={20} />
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">Email</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendVerification()}
-              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
-            />
-          </div>
-
-          <button
-            onClick={handleSendVerification}
-            className="w-full bg-gradient-to-r from-purple-300 to-blue-300 text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center gap-2"
-          >
-            <Send size={20} />
-            Send Verification Link
-          </button>
         </div>
-
-        <p className="text-xs text-center text-gray-500 px-4">
-          We'll send you a magic link to verify your email and get started! ✨
-        </p>
-
-        <button
-          onClick={onNavigateToSignIn}
-          className="text-xs text-center text-gray-400 hover:text-purple-400 transition-colors w-full"
-        >
-          Already have an account? Sign in
-        </button>
-      </div>
+      )}
     </div>
   );
 };
 
-export default NewUserSignup;
+export default Chat;
