@@ -120,8 +120,9 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         // Check if onboarding is complete
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
-            toast.success("Your personalized dashboard is ready! Click the dashboard icon in the top right to view it 💙");
-          }, 1000);
+            toast.success("Your personalized dashboard is ready! 💙");
+            navigate("/Dashboard");
+          }, 1500);
         }
       }
     } catch (error: any) {

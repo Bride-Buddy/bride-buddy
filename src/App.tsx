@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 import Chat from "./pages/chat";
 import Dashboard from "./pages/Dashboard";
+import BrideDashboard from "./components/BrideDashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
 import AuthRedirect from "./pages/AuthRedirect";
@@ -333,16 +334,7 @@ function App() {
           path="/Dashboard"
           element={
             session ? (
-              <Dashboard
-                userName={profile?.full_name || ""}
-                weddingDate={new Date(profile?.wedding_date || new Date())}
-                engagementDate={new Date(profile?.engagement_date || new Date())}
-                budget={profile?.budget || 10000}
-                spent={profile?.spent || 0}
-                weddingVibeEmojis={["💍", "🌸", "💖"]}
-                plannerCategories={plannerCategories}
-                onNavigate={(view) => navigate(`/${view}`)}
-              />
+              <BrideDashboard userId={session.user.id} />
             ) : (
               <Navigate to="/Auth" />
             )
