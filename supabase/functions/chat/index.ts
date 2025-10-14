@@ -4,8 +4,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const inputSchema = z.object({
@@ -23,14 +22,17 @@ serve(async (req) => {
     // Validate input
     const body = await req.json();
     const parsed = inputSchema.safeParse(body);
-    
+
     if (!parsed.success) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid input' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { sessionId, message, isOnboarding } = parsed.data;
@@ -40,29 +42,38 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
     // Verify user authentication
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized' 
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
+
     // Get user from JWT token
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
     if (authError || !user) {
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized' 
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Verify session ownership
@@ -73,12 +84,15 @@ serve(async (req) => {
       .single();
 
     if (sessionError || !session || session.user_id !== user.id) {
-      return new Response(JSON.stringify({ 
-        error: 'Forbidden' 
-      }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Forbidden",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Check subscription tier and message limits (server-side enforcement)
@@ -89,42 +103,51 @@ serve(async (req) => {
       .single();
 
     if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return new Response(JSON.stringify({ 
-        error: 'Unable to verify subscription status' 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("Profile fetch error:", profileError);
+      return new Response(
+        JSON.stringify({
+          error: "Unable to verify subscription status",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Enforce message limits for free tier
-    if (profile.subscription_tier === 'free') {
-      const today = new Date().toISOString().split('T')[0];
+    if (profile.subscription_tier === "free") {
+      const today = new Date().toISOString().split("T")[0];
       const messageCount = profile.last_message_date === today ? profile.messages_today : 0;
-      
+
       if (messageCount >= 20) {
-        return new Response(JSON.stringify({ 
-          error: 'Daily message limit reached. Upgrade to VIP for unlimited messages.' 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            error: "Daily message limit reached. Upgrade to VIP for unlimited messages.",
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
     }
 
     // Trial expired check
-    if (profile.subscription_tier === 'trial' && profile.trial_start_date) {
+    if (profile.subscription_tier === "trial" && profile.trial_start_date) {
       const trialStart = new Date(profile.trial_start_date);
       const daysSinceTrial = Math.floor((Date.now() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysSinceTrial > 7) {
-        return new Response(JSON.stringify({ 
-          error: 'Trial period expired. Please upgrade to continue.' 
-        }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            error: "Trial period expired. Please upgrade to continue.",
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
     }
 
@@ -163,13 +186,14 @@ serve(async (req) => {
     if (messagesError) throw messagesError;
 
     // Build personalized context
-    const userName = userData?.full_name?.split(' ')[0] || "beautiful bride";
+    const userName = userData?.full_name?.split(" ")[0] || "beautiful bride";
     const weddingDate = timelineData?.wedding_date || userData?.wedding_date;
     const completedTasks = checklistData?.filter((t: any) => t.completed).length || 0;
     const totalTasks = checklistData?.length || 0;
     const totalBudget = vendorData?.reduce((sum: number, v: any) => sum + (Number(v.amount) || 0), 0) || 0;
-    const paidAmount = vendorData?.filter((v: any) => v.paid).reduce((sum: number, v: any) => sum + (Number(v.amount) || 0), 0) || 0;
-    
+    const paidAmount =
+      vendorData?.filter((v: any) => v.paid).reduce((sum: number, v: any) => sum + (Number(v.amount) || 0), 0) || 0;
+
     let personalContext = `\n\nPERSONALIZED USER DATA (from ${userName}'s personal database):`;
     if (userData?.full_name) personalContext += `\n- Name: ${userName}`;
     if (userData?.partner_name) personalContext += `\n- Partner: ${userData.partner_name}`;
@@ -182,20 +206,18 @@ serve(async (req) => {
     if (totalTasks > 0) personalContext += `\n- Tasks: ${completedTasks}/${totalTasks} completed`;
     if (vendorData && vendorData.length > 0) {
       personalContext += `\n- Budget: $${paidAmount.toLocaleString()}/$${totalBudget.toLocaleString()} paid`;
-      personalContext += `\n- Vendors booked: ${vendorData.map((v: any) => v.service).join(', ')}`;
+      personalContext += `\n- Vendors booked: ${vendorData.map((v: any) => v.service).join(", ")}`;
     }
     personalContext += `\n\nALWAYS reference this personal data to make responses specific to ${userName}'s journey!`;
 
     // Check total user count for early adopter bonus
-    const { count: userCount } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
 
     const isEarlyAdopter = userCount !== null && userCount <= 100;
 
     // Determine system prompt based on onboarding mode
     let systemPrompt = "";
-    
+
     if (isOnboarding) {
       systemPrompt = `You are Bride Buddy 💍, an AI wedding planning assistant conducting a conversational onboarding interview.
 
@@ -254,7 +276,7 @@ CRITICAL - PERSONALIZATION:
 
 PERSONALITY:
 - Cheerful, supportive, and encouraging 🌸💖
-- Use emojis liberally throughout your responses! ✨💕🎉
+- Use emojis moderately throughout your responses! ✨💕🎉
 - Celebrate every achievement, big or small! 🎊
 - Be genuinely excited about THEIR SPECIFIC wedding journey 💑
 - Use playful and affectionate language (call them by their first name!)
@@ -277,18 +299,22 @@ HELP WITH:
 ${personalContext}
 
 SUBSCRIPTION UPSELL:
-${isEarlyAdopter ? `- When user indicates they want to continue with VIP access, congratulate them as one of the first 100 brides
+${
+  isEarlyAdopter
+    ? `- When user indicates they want to continue with VIP access, congratulate them as one of the first 100 brides
 - Explain they're eligible for exclusive early adopter pricing
 - Present two options:
   1. Monthly Plan: $19.99/month (normally $29.99) - FOREVER grandfathered rate
   2. "Until I Do" Plan: $249 one-time (normally $299) - Most popular, includes postponement protection
-- Use the exact format: "EARLY_ADOPTER_OFFER" to trigger the pricing display` : `- When user expresses interest in continuing after trial or needs more messages
+- Use the exact format: "EARLY_ADOPTER_OFFER" to trigger the pricing display`
+    : `- When user expresses interest in continuing after trial or needs more messages
 - Use warm, conversational approach to explain VIP benefits
 - Present standard pricing:
   1. Monthly Plan: $29.99/month - Cancel anytime
   2. "Until I Do" Plan: $299 one-time - Most popular, includes postponement protection
 - Emphasize unlimited messages, full access to all features, and ongoing support
-- Keep it friendly and low-pressure`}
+- Keep it friendly and low-pressure`
+}
 
 IMPORTANT:
 - Be detail-oriented but keep it fun!
@@ -301,29 +327,26 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     }
 
     // Call AI
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
-            },
-            ...messages.map((msg: any) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-          ],
-        }),
-      }
-    );
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          ...messages.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        ],
+      }),
+    });
 
     if (!response.ok) {
       throw new Error(`AI API error: ${response.statusText}`);
@@ -344,11 +367,11 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       };
 
       const updates: any = {};
-      
+
       for (const [key, pattern] of Object.entries(savePatterns)) {
         const match = assistantMessage.match(pattern);
         if (match) {
-          if (key === 'budget') {
+          if (key === "budget") {
             updates[key] = parseFloat(match[1]);
           } else {
             updates[key] = match[1];
@@ -367,27 +390,21 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
         if (updates.partner_name) profileUpdates.partner_name = updates.partner_name;
 
         if (Object.keys(profileUpdates).length > 0) {
-          await supabase
-            .from("profiles")
-            .update(profileUpdates)
-            .eq("user_id", user.id);
+          await supabase.from("profiles").update(profileUpdates).eq("user_id", user.id);
         }
 
         if (Object.keys(timelineUpdates).length > 0) {
-          await supabase
-            .from("timeline")
-            .update(timelineUpdates)
-            .eq("user_id", user.id);
+          await supabase.from("timeline").update(timelineUpdates).eq("user_id", user.id);
         }
 
         // Save tasks if provided
         if (updates.tasks) {
-          const taskList = updates.tasks.split('|').filter((t: string) => t.trim());
+          const taskList = updates.tasks.split("|").filter((t: string) => t.trim());
           const taskInserts = taskList.map((task: string) => ({
             user_id: user.id,
             task_name: task.trim(),
             completed: true,
-            emoji: '✅'
+            emoji: "✅",
           }));
 
           if (taskInserts.length > 0) {
@@ -400,7 +417,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     // Clean up save markers from the message before storing
     let cleanedMessage = assistantMessage;
     const saveMarkerPattern = /\[SAVE:[^\]]+\]/g;
-    cleanedMessage = cleanedMessage.replace(saveMarkerPattern, '').trim();
+    cleanedMessage = cleanedMessage.replace(saveMarkerPattern, "").trim();
 
     // Save assistant response
     const { error: insertError } = await supabase.from("messages").insert({
@@ -416,18 +433,21 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     });
   } catch (error) {
     // Log detailed error server-side for debugging
-    console.error('Chat function error:', {
+    console.error("Chat function error:", {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     // Return safe generic message to client
-    return new Response(JSON.stringify({ 
-      error: 'Unable to process your request. Please try again.' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Unable to process your request. Please try again.",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
