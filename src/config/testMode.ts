@@ -12,7 +12,7 @@ export const TEST_MODE: TestModeValue = 1; // Change to 0 for production, 1/2/3 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
   mode1: {
-    skipEmailVerification: true
+    skipEmailVerification: true,
     useMockEmailVerification: true, // NEW: Mock verification (instant)
     skipDatabaseCreation: true,
     landingPage: "auth",
