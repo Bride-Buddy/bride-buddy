@@ -14,23 +14,34 @@ interface OnboardingChatProps {
   userName: string;
 }
 
-const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => {
+const OnboardingChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sessionId, setSessionId] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("Bride");
   const [isLoading, setIsLoading] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const logoUrl = "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
-
   useEffect(() => {
-    // Create a chat session for onboarding
-    const createSession = async () => {
+    const initUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
+
+      const user = session.user;
+      setUserId(user.id);
+      setUserName(user.user_metadata?.full_name || "beautiful bride 💕");
+
       const { data, error } = await supabase
         .from("chat_sessions")
-        .insert({ user_id: userId, title: "Onboarding Session" })
+        .insert({ user_id: user.id, title: "Onboarding Session" })
         .select()
         .single();
 
@@ -43,8 +54,8 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => 
       setSessionId(data.id);
     };
 
-    createSession();
-  }, [userId]);
+    initUser();
+  }, [navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,7 +87,9 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => 
       if (userMsgError) throw userMsgError;
 
       // Get auth token for the edge function
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
 
       // Call chat edge function with onboarding flag
@@ -84,7 +97,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           sessionId,
@@ -152,9 +165,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => 
               <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
                 Welcome, {userName}! 💕
               </h2>
-              <p className="text-gray-600">
-                I'm so excited to help you plan your big day!
-              </p>
+              <p className="text-gray-600">I'm so excited to help you plan your big day!</p>
             </div>
 
             <div className="w-full max-w-sm">
@@ -185,9 +196,18 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId, userName }) => 
               <div className="flex justify-start">
                 <div className="bg-white text-gray-800 shadow-md rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                    <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                    <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
                   </div>
                 </div>
               </div>
