@@ -205,9 +205,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                         }}
                       >
                         {marker.type === 'car' ? (
-                          <div className="text-2xl" style={{ transform: 'scaleX(-1)' }}>🚗</div>
+ <div className="text-2xl" style={{ transform: 'scaleX(-1)' }}>🚗</div>
                         ) : marker.type === 'category' ? (
                           <div className="text-xl">{marker.emoji}</div>
+                        ) : marker.position > 0 && marker.position < 100 ? (
+                          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
                         ) : null}
                       </div>
                     );
@@ -215,6 +217,35 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <CheckSquare size={20} className="text-purple-400" />
+              Your Focus Today
+            </h3>
+            <div className="space-y-3">
+              {todaysTasks.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">{item.emoji}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800 mb-1">{item.task}</p>
+                      <p className="text-xs text-gray-500">{item.vendor} • {item.phone}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => onNavigate('planner')}
+              className="w-full mt-4 text-sm text-purple-400 hover:text-purple-500 font-medium transition-colors"
+            >
+              View full wedding planner →
+            </button>
           </div>
         </div>
       </div>
