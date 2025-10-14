@@ -111,9 +111,8 @@ const Auth = () => {
 
       <div className="flex-1 flex items-center justify-center">
         <img src={logo} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
-      </div>
-
-      <div className="w-full space-y-4 pb-8">}
+      </div>} 
+      <div className="w-full space-y-4 pb-8">
         <h2
           className="text-2xl font-bold text-center text-purple-400 mb-2"
           style={{
