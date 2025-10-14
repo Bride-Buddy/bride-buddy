@@ -19,6 +19,7 @@ function App() {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [plannerCategories, setPlannerCategories] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
