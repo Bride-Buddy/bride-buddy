@@ -64,17 +64,15 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
   useEffect(() => {
     const createSession = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) {
           toast.error("Please log in to use chat");
           return;
         }
 
-        const { data, error } = await supabase
-          .from("chat_sessions")
-          .insert({ user_id: user.id })
-          .select()
-          .single();
+        const { data, error } = await supabase.from("chat_sessions").insert({ user_id: user.id }).select().single();
 
         if (error) throw error;
         setSessionId(data.id);
@@ -131,14 +129,11 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
     <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
       {/* HEADER */}
       <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
-        <button 
-          onClick={() => setMessages([])}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-        >
-          <img 
-            src={logo} 
-            alt="Bride Buddy" 
-            className="w-[100px] h-[100px] object-contain drop-shadow-lg cursor-pointer" 
+        <button onClick={() => setMessages([])} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <img
+            src={logo}
+            alt="Bride Buddy"
+            className="w-[100px] h-[100px] object-contain drop-shadow-lg cursor-pointer"
           />
         </button>
         <button
@@ -214,4 +209,4 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate }
   );
 };
 
-export default Chat;
+export default shortChat;
