@@ -33,6 +33,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
   const [showEarlyAdopterOffer, setShowEarlyAdopterOffer] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -67,8 +68,25 @@ const Chat = ({ userId }: ChatProps) => {
       }
     };
 
+    const requestGeolocation = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            });
+          },
+          (error) => {
+            console.log("Geolocation not available:", error);
+          }
+        );
+      }
+    };
+
     fetchUserProfile();
     createOrGetSession();
+    requestGeolocation();
   }, [userId]);
 
   useEffect(() => {
@@ -199,6 +217,7 @@ const Chat = ({ userId }: ChatProps) => {
         body: {
           sessionId,
           message: userMessage,
+          userLocation,
         },
       });
 

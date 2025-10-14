@@ -11,6 +11,10 @@ const inputSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
   isOnboarding: z.boolean().optional(),
+  userLocation: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }).optional(),
 });
 
 serve(async (req) => {
@@ -40,7 +44,7 @@ serve(async (req) => {
       );
     }
 
-    const { sessionId, message, isOnboarding } = parsed.data;
+    const { sessionId, message, isOnboarding, userLocation } = parsed.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -71,9 +75,7 @@ serve(async (req) => {
       error: authError,
     } = await supabase.auth.getUser(token);
     console.log("👤 User authenticated:", user?.id);
-    
-    // Get user location from metadata
-    const userLocation = user?.user_metadata?.location;
+    console.log("📍 User location provided:", !!userLocation);
 
     if (authError || !user) {
       console.error("❌ Auth error:", authError);
@@ -566,8 +568,8 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                   address: [
                     tags["addr:housenumber"],
                     tags["addr:street"],
-                    tags["addr:city"] || userLocation.city,
-                    tags["addr:state"] || userLocation.state,
+                    tags["addr:city"],
+                    tags["addr:state"],
                     tags["addr:postcode"],
                   ].filter(Boolean).join(", "),
                   phone: tags.phone || tags["contact:phone"] || "",
@@ -589,17 +591,29 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
 
                 try {
                   // Use upsert to prevent duplicates based on user_id and name
-                  const { error: insertError } = await supabase
+                  // Check for existing vendors to avoid duplicates
+                  const existingVendorsCheck = await supabase
                     .from("vendors")
-                    .upsert(vendorInserts, {
-                      onConflict: 'user_id,name',
-                      ignoreDuplicates: false
-                    });
+                    .select("name")
+                    .eq("user_id", user.id)
+                    .in("name", vendors.map((v: any) => v.name));
                   
-                  if (insertError) {
-                    console.error("Vendor insert error:", insertError);
+                  const existingNames = new Set(existingVendorsCheck.data?.map(v => v.name) || []);
+                  const newVendors = vendorInserts.filter((v: any) => !existingNames.has(v.name));
+                  
+                  if (newVendors.length > 0) {
+                    const { error: insertError } = await supabase
+                      .from("vendors")
+                      .insert(newVendors)
+                      .select();
+                    
+                    if (insertError) {
+                      console.error("Vendor insert error:", insertError);
+                    } else {
+                      console.log(`Added ${newVendors.length} new vendors for user ${user.id}`);
+                    }
                   } else {
-                    console.log(`Added/updated ${vendors.length} vendors for user ${user.id}`);
+                    console.log("All vendors already exist in tracker");
                   }
                 } catch (err) {
                   console.error("Vendor upsert failed:", err);
