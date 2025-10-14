@@ -1,159 +1,208 @@
-import { useState } from "react";
-import logo from "@/assets/bride-buddy-logo-ring.png";
-import { LayoutDashboard, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { LayoutDashboard, CheckSquare, ArrowLeft, DollarSign } from 'lucide-react';
 
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "assistant";
+interface DashboardProps {
+  userName: string;
+  weddingDate: Date;
+  engagementDate: Date;
+  budget: number;
+  spent: number;
+  weddingVibeEmojis: string[];
+  plannerCategories: any[];
+  onNavigate: (view: string) => void;
 }
 
-export default function Dashboard() {
-  const [isChatActive, setIsChatActive] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
+const Dashboard: React.FC<DashboardProps> = ({
+  userName,
+  weddingDate,
+  engagementDate,
+  budget,
+  spent,
+  weddingVibeEmojis,
+  plannerCategories,
+  onNavigate
+}) => {
+  
+  const getDaysUntilWedding = () => {
+    const today = new Date();
+    const diffTime = weddingDate.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
 
-  const handleSendMessage = (text: string) => {
-    if (!text.trim()) return;
+  const getTimelineProgress = () => {
+    const today = new Date();
+    const totalTime = weddingDate.getTime() - engagementDate.getTime();
+    const elapsed = today.getTime() - engagementDate.getTime();
+    return Math.min(Math.max((elapsed / totalTime) * 100, 0), 100);
+  };
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: text,
-      sender: "user",
+  const getTodaysFocus = () => {
+    const incompleteTasks: any[] = [];
+    plannerCategories.forEach(cat => {
+      cat.tasks.forEach((task: any) => {
+        if (!task.completed) {
+          incompleteTasks.push({
+            task: task.task,
+            emoji: cat.emoji,
+            vendor: cat.vendor,
+            phone: cat.phone
+          });
+        }
+      });
+    });
+    return incompleteTasks.slice(0, 4);
+  };
+
+  const getTimelineMarkers = () => {
+    const today = new Date();
+    const totalTime = weddingDate.getTime() - engagementDate.getTime();
+    const totalDays = Math.ceil(totalTime / (1000 * 60 * 60 * 24));
+    const elapsed = today.getTime() - engagementDate.getTime();
+    const currentDay = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
+    
+    const markers = [];
+    const categoryCompletionDays: Record<string, number> = {
+      'Venue': 45,
+      'Attire': 90
     };
 
-    setMessages([...messages, newMessage]);
-    setInputValue("");
-    setIsChatActive(true);
-
-    // Simulate assistant response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "I'm here to help! How can I assist you with your wedding planning today?",
-        sender: "assistant",
+    for (let day = 0; day <= totalDays; day++) {
+      let marker: any = {
+        day,
+        type: 'empty',
+        emoji: null,
+        position: (day / totalDays) * 100
       };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+
+      Object.entries(categoryCompletionDays).forEach(([catName, completionDay]) => {
+        if (completionDay === day) {
+          const category = plannerCategories.find(c => c.category === catName);
+          if (category && category.tasks.every((t: any) => t.completed)) {
+            marker.type = 'category';
+            marker.emoji = category.emoji;
+          }
+        }
+      });
+
+      if (day === currentDay) {
+        marker.type = 'car';
+        marker.emoji = '🚗';
+      }
+
+      markers.push(marker);
+    }
+
+    return markers;
   };
 
-  const handlePromptClick = (prompt: string) => {
-    handleSendMessage(prompt);
-  };
-
-  const handleInputSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSendMessage(inputValue);
-  };
-
-  if (!isChatActive) {
-    return (
-      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col px-6">
-        {/* Logo Section - Top 1/3 */}
-        <div className="flex items-center justify-center" style={{ height: "33.33%" }}>
-          <img src={logo} alt="Bride Buddy" className="w-64 h-64 object-contain" />
-        </div>
-
-        {/* Input and Prompts Section - Middle */}
-        <div className="flex-1 flex flex-col justify-center gap-6 pb-20">
-          <form onSubmit={handleInputSubmit} className="relative">
-            <Input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="✨"
-              className="w-full h-14 px-6 pr-14 rounded-full border-2 border-purple-200 focus:border-purple-400 transition-colors"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center transition-colors"
-            >
-              <Send className="w-5 h-5 text-white" />
-            </button>
-          </form>
-
-          {/* Suggested Prompts */}
-          <div className="flex flex-col gap-3">
-            <Button
-              onClick={() => handlePromptClick("see my progress")}
-              variant="outline"
-              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
-            >
-              see my progress
-            </Button>
-            <Button
-              onClick={() => handlePromptClick("pick up where we left off")}
-              variant="outline"
-              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
-            >
-              pick up where we left off
-            </Button>
-            <Button
-              onClick={() => handlePromptClick("I just need to vent")}
-              variant="outline"
-              className="w-full h-12 rounded-full border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
-            >
-              I just need to vent
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const daysUntil = getDaysUntilWedding();
+  const progress = getTimelineProgress();
+  const todaysTasks = getTodaysFocus();
 
   return (
-    <div className="h-screen w-full bg-white flex flex-col">
-      {/* Header with Logo and Dashboard Button */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <button onClick={() => window.location.href = "/"}>
-          <img src={logo} alt="Bride Buddy" className="w-32 h-32 object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-        </button>
-        <button
-          onClick={() => (window.location.href = "/dashboard")}
-          className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors"
-        >
-          <LayoutDashboard className="w-5 h-5 text-purple-600" />
-        </button>
-      </div>
+    <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl">
+      <div className="h-full overflow-y-auto bg-gradient-to-b from-purple-100 to-blue-100">
+        <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+          <button
+            onClick={() => onNavigate('chat')}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
+          >
+            <ArrowLeft className="text-white" size={20} />
+          </button>
+          <span className="text-white font-semibold">Dashboard</span>
+          <div className="w-9"></div>
+        </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[75%] px-4 py-3 rounded-2xl ${
-                message.sender === "user"
-                  ? "bg-purple-500 text-white rounded-br-sm"
-                  : "bg-gray-100 text-gray-800 rounded-bl-sm"
-              }`}
-            >
-              {message.text}
+        <div className="p-6 space-y-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div className="flex justify-center gap-2 mb-4">
+              {weddingVibeEmojis.map((emoji, idx) => (
+                <span key={idx} className="text-3xl">{emoji}</span>
+              ))}
+            </div>
+            <h2 className="text-4xl font-bold text-purple-400 mb-2">{daysUntil}</h2>
+            <p className="text-gray-600 font-medium">days until "I Do"</p>
+          </div>
+
+          <div 
+            className="bg-white rounded-2xl shadow-lg p-6 cursor-pointer hover:shadow-xl transition-all"
+            onClick={() => onNavigate('planner')}
+          >
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <DollarSign size={20} className="text-purple-400" />
+              Budget Overview
+            </h3>
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-400">
+                  ${spent.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  of ${budget.toLocaleString()} spent
+                </div>
+              </div>
+
+              <div className="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="absolute h-full bg-gradient-to-r from-purple-300 to-blue-300 transition-all duration-500"
+                  style={{ width: `${(spent / budget) * 100}%` }}
+                ></div>
+              </div>
+
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>${(budget - spent).toLocaleString()} remaining</span>
+                <span>{Math.round((spent / budget) * 100)}% used</span>
+              </div>
+
+              <div className="text-xs text-center text-purple-400 font-medium mt-4">
+                Click to view full wedding planner →
+              </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Input Area */}
-      <div className="border-t border-gray-200 px-4 py-4">
-        <form onSubmit={handleInputSubmit} className="relative">
-          <Input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type a message..."
-            className="w-full h-12 px-4 pr-12 rounded-full border-2 border-gray-200 focus:border-purple-400 transition-colors"
-          />
-          <button
-            type="submit"
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center transition-colors"
-          >
-            <Send className="w-4 h-4 text-white" />
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <LayoutDashboard size={20} className="text-purple-400" />
+              Wedding Timeline
+            </h3>
+            <div className="space-y-4">
+              <div className="relative h-16 bg-gray-100 rounded-lg overflow-visible px-4">
+                <div 
+                  className="absolute top-1/2 left-0 w-full h-1 bg-gray-200"
+                  style={{ transform: 'translateY(-50%)' }}
+                ></div>
+
+                <div 
+                  className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-purple-300 to-blue-300 transition-all duration-500"
+                  style={{ width: `${progress}%`, transform: 'translateY(-50%)' }}
+                ></div>
+
+                <div
+                  className="absolute top-1/2 text-2xl z-10"
+                  style={{ left: '0%', transform: 'translate(-50%, -50%)' }}
+                >
+                  💍
+                </div>
+
+                <div
+                  className="absolute top-1/2 text-2xl z-10"
+                  style={{ left: '100%', transform: 'translate(-50%, -50%)' }}
+                >
+                  💕
+                </div>
+
+                <div className="absolute inset-0">
+                  {getTimelineMarkers().map((marker, idx) => {
+                    if (marker.type === 'empty' && idx % 30 !== 0) return null;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute top-1/2 z-20"
+                        style={{ 
+                          left: `${marker.position}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      >
+                        {marker.type === 'car' ? (
+                          <div className="text-2xl" style={{ transform: 'scaleX(-1)' }}>🚗</div>
