@@ -11,11 +11,10 @@ const inputSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
   isOnboarding: z.boolean().optional(),
-  userLocation: z.object({
-    latitude: z.number(),
-    longitude: z.number(),
-  }).optional(),
-});
+ userLocation: z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+}).nullable().optional(),
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
