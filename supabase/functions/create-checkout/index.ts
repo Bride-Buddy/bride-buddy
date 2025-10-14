@@ -46,7 +46,25 @@ serve(async (req) => {
       logStep("No existing customer, will create one during checkout");
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Check if early bird coupon is still available (first 100 customers)
+    const earlyBirdCoupons = ["9HdxQC81", "vHu8Tby7"];
+    let applicableCoupon = null;
+    
+    for (const couponId of earlyBirdCoupons) {
+      try {
+        const coupon = await stripe.coupons.retrieve(couponId);
+        if (coupon.times_redeemed < 100) {
+          applicableCoupon = couponId;
+          logStep("Early bird coupon available", { couponId, timesRedeemed: coupon.times_redeemed });
+          break;
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logStep("Could not retrieve coupon", { couponId, error: errorMsg });
+      }
+    }
+
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -58,7 +76,16 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/chat?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/chat`,
-    });
+    };
+
+    if (applicableCoupon) {
+      sessionConfig.discounts = [{ coupon: applicableCoupon }];
+      logStep("Applying early bird coupon to checkout", { couponId: applicableCoupon });
+    } else {
+      logStep("No early bird coupon applied - limit reached or coupons unavailable");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
