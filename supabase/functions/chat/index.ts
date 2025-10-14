@@ -101,7 +101,7 @@ serve(async (req) => {
     // Check subscription tier and message limits (server-side enforcement)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("subscription_tier, messages_today, last_message_date, trial_start_date")
+      .select("subscription_tier, messages_today, last_message_date, trial_start_date, full_name")
       .eq("user_id", user.id)
       .single();
 
@@ -117,6 +117,9 @@ serve(async (req) => {
         },
       );
     }
+
+    // Get user name early for trial expiration message
+    const userName = profile?.full_name?.split(" ")[0] || "beautiful bride";
 
     // Enforce message limits for free tier
     if (profile.subscription_tier === "free") {
@@ -229,7 +232,7 @@ What would you like to do? 💕`;
     if (messagesError) throw messagesError;
 
     // Build personalized context
-    const userName = userData?.full_name?.split(" ")[0] || "beautiful bride";
+    // userName already defined earlier for trial expiration message
     const weddingDate = timelineData?.wedding_date || userData?.wedding_date;
     const completedTasks = checklistData?.filter((t: any) => t.completed).length || 0;
     const totalTasks = checklistData?.length || 0;
