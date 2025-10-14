@@ -63,6 +63,9 @@ serve(async (req) => {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser(token);
+    
+    // Get user location from metadata
+    const userLocation = user?.user_metadata?.location;
 
     if (authError || !user) {
       return new Response(
@@ -326,7 +329,37 @@ IMPORTANT:
 Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     }
 
-    // Call AI
+    // Define vendor search tool
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "search_vendors",
+          description: "Search for wedding vendors (venues, photographers, florists, caterers, etc.) near the user's location using OpenStreetMap data. Returns vendor details including name, address, phone, and website.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "Search query for the vendor (e.g., 'wedding venue', 'photographer', 'florist', 'caterer')",
+              },
+              category: {
+                type: "string",
+                description: "Vendor category/service type (e.g., 'venue', 'photography', 'flowers', 'catering', 'dj', 'makeup')",
+              },
+              radius_km: {
+                type: "number",
+                description: "Search radius in kilometers (default: 25)",
+                default: 25,
+              },
+            },
+            required: ["query"],
+          },
+        },
+      },
+    ];
+
+    // Call AI with tool support
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -345,6 +378,8 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
             content: msg.content,
           })),
         ],
+        tools: tools,
+        tool_choice: "auto",
       }),
     });
 
@@ -353,7 +388,90 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
     }
 
     const aiResponse = await response.json();
-    const assistantMessage = aiResponse.choices[0].message.content;
+    let assistantMessage = aiResponse.choices[0].message.content;
+    const toolCalls = aiResponse.choices[0].message.tool_calls;
+
+    // Handle tool calls (vendor search)
+    if (toolCalls && toolCalls.length > 0) {
+      console.log("Tool calls detected:", toolCalls);
+      
+      for (const toolCall of toolCalls) {
+        if (toolCall.function.name === "search_vendors") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const { query, category, radius_km = 25 } = args;
+
+          if (!userLocation?.latitude || !userLocation?.longitude) {
+            assistantMessage += "\n\n⚠️ I need your location to search for vendors nearby. Please enable location access in your profile settings.";
+            continue;
+          }
+
+          // Search OpenStreetMap
+          const osmQuery = `
+            [out:json];
+            (
+              node["name"~"${query}",i](around:${radius_km * 1000},${userLocation.latitude},${userLocation.longitude});
+              way["name"~"${query}",i](around:${radius_km * 1000},${userLocation.latitude},${userLocation.longitude});
+            );
+            out body;
+          `;
+
+          try {
+            const osmResponse = await fetch("https://overpass-api.de/api/interpreter", {
+              method: "POST",
+              body: osmQuery,
+            });
+
+            const osmData = await osmResponse.json();
+            
+            if (osmData.elements && osmData.elements.length > 0) {
+              const vendors = osmData.elements.slice(0, 5).map((element: any) => {
+                const tags = element.tags || {};
+                return {
+                  name: tags.name || query,
+                  address: [
+                    tags["addr:housenumber"],
+                    tags["addr:street"],
+                    tags["addr:city"] || userLocation.city,
+                    tags["addr:state"] || userLocation.state,
+                    tags["addr:postcode"],
+                  ].filter(Boolean).join(", "),
+                  phone: tags.phone || tags["contact:phone"] || "",
+                  website: tags.website || tags["contact:website"] || "",
+                  service_type: category || tags.amenity || tags.shop || query,
+                };
+              });
+
+              // Auto-add vendors to database if in onboarding mode
+              if (isOnboarding && vendors.length > 0) {
+                const vendorInserts = vendors.map((v: any) => ({
+                  user_id: user.id,
+                  name: v.name,
+                  service: v.service_type,
+                  notes: `Phone: ${v.phone}\nWebsite: ${v.website}\nAddress: ${v.address}`,
+                  amount: 0,
+                  paid: false,
+                }));
+
+                await supabase.from("vendors").insert(vendorInserts);
+                console.log(`Added ${vendors.length} vendors to database for user ${user.id}`);
+              }
+
+              // Format vendor results for the AI response
+              const vendorList = vendors.map((v: any, idx: number) => 
+                `${idx + 1}. **${v.name}**\n   - Service: ${v.service_type}\n   - Address: ${v.address || "Not available"}\n   - Phone: ${v.phone || "Not available"}\n   - Website: ${v.website || "Not available"}`
+              ).join("\n\n");
+
+              assistantMessage += `\n\n🔍 I found ${vendors.length} vendors near you:\n\n${vendorList}\n\n${isOnboarding ? "✅ I've added these to your vendor tracker!" : "Would you like me to add any of these to your vendor tracker?"}`;
+            } else {
+              assistantMessage += `\n\n😊 I couldn't find any vendors matching "${query}" within ${radius_km}km of your location. Try searching with different keywords or expand your search radius!`;
+            }
+          } catch (osmError) {
+            console.error("OSM search error:", osmError);
+            assistantMessage += `\n\n⚠️ I had trouble searching for vendors right now. Please try again in a moment!`;
+          }
+        }
+      }
+    }
 
     // Parse and save data if in onboarding mode
     if (isOnboarding) {
