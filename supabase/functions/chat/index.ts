@@ -291,6 +291,13 @@ COMMUNICATION STYLE:
 - Celebrate specific milestones based on their wedding date
 - Use phrases like: "You've got this, ${userName}!", "Amazing work!", "So proud of you!"
 
+VENDOR AUTO-DETECTION:
+- When users mention a vendor (e.g., "My photographer is Sarah's Studio", "We booked Elite Catering"), AUTOMATICALLY use the search_vendors tool
+- Extract the vendor name and service type from their message
+- Search for the vendor near their location
+- Auto-add vendor details (phone, address, website) to their vendor tracker
+- Confirm what was added with emoji-rich formatting
+
 HELP WITH:
 - Personalized checklists tailored to THEIR timeline 📋
 - Vendor suggestions based on THEIR budget and booked vendors 🏰📸💐
@@ -299,6 +306,7 @@ HELP WITH:
 - Timeline planning based on THEIR wedding date 🗓️
 - Theme and decoration inspiration 🌸✨
 - Stress relief and encouragement 💕
+- Automatic vendor lookup and contact information retrieval 📞🌐
 ${personalContext}
 
 SUBSCRIPTION UPSELL:
@@ -335,25 +343,25 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
         type: "function",
         function: {
           name: "search_vendors",
-          description: "Search for wedding vendors (venues, photographers, florists, caterers, etc.) near the user's location using OpenStreetMap data. Returns vendor details including name, address, phone, and website.",
+          description: "Search for wedding vendors near the user's location using OpenStreetMap data. Use this when the user mentions a vendor name (e.g., 'My photographer is Sarah's Studio', 'We booked Elite Catering'). Returns vendor details including name, address, phone, and website, then automatically adds them to the vendor tracker.",
           parameters: {
             type: "object",
             properties: {
               query: {
                 type: "string",
-                description: "Search query for the vendor (e.g., 'wedding venue', 'photographer', 'florist', 'caterer')",
+                description: "Vendor name or search query (e.g., 'Sarah Studio', 'Elite Catering', 'wedding venue', 'photographer')",
               },
               category: {
                 type: "string",
-                description: "Vendor category/service type (e.g., 'venue', 'photography', 'flowers', 'catering', 'dj', 'makeup')",
+                description: "Vendor service type (e.g., 'Photography', 'Catering', 'Venue', 'Flowers', 'DJ', 'Makeup', 'Cake', 'Videography')",
               },
               radius_km: {
                 type: "number",
-                description: "Search radius in kilometers (default: 25)",
-                default: 25,
+                description: "Search radius in kilometers (default: 50)",
+                default: 50,
               },
             },
-            required: ["query"],
+            required: ["query", "category"],
           },
         },
       },
@@ -398,7 +406,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       for (const toolCall of toolCalls) {
         if (toolCall.function.name === "search_vendors") {
           const args = JSON.parse(toolCall.function.arguments);
-          const { query, category, radius_km = 25 } = args;
+          const { query, category, radius_km = 50 } = args;
 
           if (!userLocation?.latitude || !userLocation?.longitude) {
             assistantMessage += "\n\n⚠️ I need your location to search for vendors nearby. Please enable location access in your profile settings.";
@@ -441,27 +449,46 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                 };
               });
 
-              // Auto-add vendors to database if in onboarding mode
-              if (isOnboarding && vendors.length > 0) {
+              // Auto-add vendors to database (for both onboarding and regular chat)
+              if (vendors.length > 0) {
                 const vendorInserts = vendors.map((v: any) => ({
                   user_id: user.id,
                   name: v.name,
                   service: v.service_type,
-                  notes: `Phone: ${v.phone}\nWebsite: ${v.website}\nAddress: ${v.address}`,
+                  notes: `📞 ${v.phone || "Not available"}\n🌐 ${v.website || "Not available"}\n📍 ${v.address || "Not available"}`,
                   amount: 0,
                   paid: false,
                 }));
 
-                await supabase.from("vendors").insert(vendorInserts);
-                console.log(`Added ${vendors.length} vendors to database for user ${user.id}`);
+                try {
+                  // Use upsert to prevent duplicates based on user_id and name
+                  const { error: insertError } = await supabase
+                    .from("vendors")
+                    .upsert(vendorInserts, {
+                      onConflict: 'user_id,name',
+                      ignoreDuplicates: false
+                    });
+                  
+                  if (insertError) {
+                    console.error("Vendor insert error:", insertError);
+                  } else {
+                    console.log(`Added/updated ${vendors.length} vendors for user ${user.id}`);
+                  }
+                } catch (err) {
+                  console.error("Vendor upsert failed:", err);
+                }
               }
 
-              // Format vendor results for the AI response
-              const vendorList = vendors.map((v: any, idx: number) => 
-                `${idx + 1}. **${v.name}**\n   - Service: ${v.service_type}\n   - Address: ${v.address || "Not available"}\n   - Phone: ${v.phone || "Not available"}\n   - Website: ${v.website || "Not available"}`
-              ).join("\n\n");
-
-              assistantMessage += `\n\n🔍 I found ${vendors.length} vendors near you:\n\n${vendorList}\n\n${isOnboarding ? "✅ I've added these to your vendor tracker!" : "Would you like me to add any of these to your vendor tracker?"}`;
+              // Format vendor results for the AI response with emoji-rich confirmation
+              if (vendors.length === 1) {
+                const v = vendors[0];
+                assistantMessage += `\n\n✅ Added **${v.name}** to your vendor tracker!\n\n📸 **Service:** ${v.service_type}\n📞 **Phone:** ${v.phone || "Not available"}\n🌐 **Website:** ${v.website || "Not available"}\n📍 **Address:** ${v.address || "Not available"}\n\nYou can view and edit this in your Vendor Tracker! 💕`;
+              } else if (vendors.length > 1) {
+                const vendorList = vendors.map((v: any, idx: number) => 
+                  `${idx + 1}. **${v.name}**\n   📸 Service: ${v.service_type}\n   📍 ${v.address || "Not available"}\n   📞 ${v.phone || "Not available"}`
+                ).join("\n\n");
+                assistantMessage += `\n\n✅ I found ${vendors.length} vendors matching "${query}":\n\n${vendorList}\n\nI've added ${vendors.length === 1 ? 'this' : 'these'} to your vendor tracker! You can view details in your Vendor Tracker. 💕`;
+              }
             } else {
               assistantMessage += `\n\n😊 I couldn't find any vendors matching "${query}" within ${radius_km}km of your location. Try searching with different keywords or expand your search radius!`;
             }
