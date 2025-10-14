@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Send, LayoutDashboard } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Message {
   type: "user" | "bot";
@@ -62,18 +64,34 @@ const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate, 
     }
   };
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const userMessage: Message = { type: "user", text };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
 
-    // Simulate bot response - in production, this would call Claude API
-    setTimeout(() => {
-      const botResponse = `I hear you! Let me help you with that. Tell me more about what you're thinking regarding "${text}"?`;
-      setMessages((prev) => [...prev, { type: "bot", text: botResponse }]);
-    }, 1000);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: { 
+          sessionId: crypto.randomUUID(), // Generate a session ID
+          message: text 
+        }
+      });
+
+      if (error) throw error;
+
+      const botResponse: Message = { 
+        type: "bot", 
+        text: data.response || "I'm here to help! Could you tell me more?" 
+      };
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast.error("Sorry, I had trouble responding. Please try again.");
+      // Remove the user message on error
+      setMessages((prev) => prev.slice(0, -1));
+    }
   };
 
   return (
