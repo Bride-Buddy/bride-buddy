@@ -48,7 +48,8 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(`Check your inbox! We've sent a magic link to ${email}`);
+      // Navigate to verification page instead of showing toast
+      navigate("/EmailVerification", { state: { email } });
     }
   };
 

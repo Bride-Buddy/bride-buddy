@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/Planner";
 import Auth from "./pages/Auth";
 import AuthRedirect from "./pages/AuthRedirect";
+import EmailVerification from "./pages/EmailVerification";
 import OnboardingChat from "./pages/OnboardingChat";
 import { TrialExpirationModal, PricingModal } from "./components/Modals";
 
@@ -163,6 +164,9 @@ function App() {
           path="/auth"
           element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
         />
+
+        {/* Email verification page */}
+        <Route path="/EmailVerification" element={<EmailVerification />} />
 
         {/* Post-login redirect handler */}
         <Route path="/AuthRedirect" element={<AuthRedirect />} />
