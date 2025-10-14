@@ -8,8 +8,11 @@ export const TEST_MODE_CONFIG = {
   // Skip email verification in test mode
   skipEmailVerification: TEST_MODE,
   
-  // Trial duration in days (7 for production, 1 for testing)
-  trialDurationDays: TEST_MODE ? 1 : 7,
+  // Trial duration in days (7 for production)
+  trialDurationDays: 7,
+  
+  // Trial duration in minutes for test mode (30 minutes for testing)
+  trialDurationMinutes: 30,
   
   // Auto-login after signup in test mode
   autoLoginAfterSignup: TEST_MODE,
@@ -21,7 +24,13 @@ export const TEST_MODE_CONFIG = {
 // Helper to get trial end date
 export const getTrialEndDate = (startDate: Date): Date => {
   const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+  if (TEST_MODE) {
+    // Add minutes in test mode
+    endDate.setMinutes(endDate.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
+  } else {
+    // Add days in production
+    endDate.setDate(endDate.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+  }
   return endDate;
 };
 
@@ -32,10 +41,17 @@ export const isTrialExpired = (trialStartDate: string): boolean => {
   return new Date() > endDate;
 };
 
-// Helper to get days remaining in trial
+// Helper to get days/minutes remaining in trial
 export const getDaysRemainingInTrial = (trialStartDate: string): number => {
   const startDate = new Date(trialStartDate);
   const endDate = getTrialEndDate(startDate);
   const diffTime = endDate.getTime() - new Date().getTime();
-  return Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
+  
+  if (TEST_MODE) {
+    // Return minutes remaining in test mode
+    return Math.max(Math.ceil(diffTime / (1000 * 60)), 0);
+  } else {
+    // Return days remaining in production
+    return Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
+  }
 };

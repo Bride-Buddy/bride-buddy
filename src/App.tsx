@@ -91,19 +91,27 @@ function App() {
       const trialStart = new Date(profile.trial_start_date);
       const now = new Date();
       const trialEnd = new Date(trialStart);
-      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+      if (TEST_MODE_CONFIG.showTestModeIndicator) {
+        // Add minutes in test mode
+        trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
+      } else {
+        // Add days in production
+        trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+      }
 
       const diffTime = trialEnd.getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const daysRemaining = TEST_MODE_CONFIG.showTestModeIndicator
+        ? Math.ceil(diffTime / (1000 * 60)) // Minutes in test mode
+        : Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Days in production
 
       // Check localStorage for last dismissal
       const lastDismissed = localStorage.getItem("trialModalDismissed");
       const today = now.toDateString();
       
-      // In test mode (1 day trial), show modal immediately when trial expires
+      // In test mode (30 minute trial), show modal when <= 5 minutes remain or expired
       // In production (7 day trial), show modal at Day 5, 3, or 1
-      const shouldShowModal = TEST_MODE_CONFIG.trialDurationDays === 1
-        ? daysRemaining <= 0
+      const shouldShowModal = TEST_MODE_CONFIG.showTestModeIndicator
+        ? daysRemaining <= 5 // Show when 5 minutes or less remaining
         : (daysRemaining === 5 || daysRemaining === 3 || daysRemaining <= 1) && daysRemaining > 0;
       
       if (shouldShowModal && lastDismissed !== today) {
@@ -149,16 +157,33 @@ function App() {
     if (!profile?.trial_start_date) return 0;
     const today = new Date();
     const trialEnd = new Date(profile.trial_start_date);
-    trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
-    const diffTime = trialEnd.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (TEST_MODE_CONFIG.showTestModeIndicator) {
+      // Add minutes in test mode
+      trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
+      const diffTime = trialEnd.getTime() - today.getTime();
+      return Math.ceil(diffTime / (1000 * 60)); // Return minutes
+    } else {
+      // Add days in production
+      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+      const diffTime = trialEnd.getTime() - today.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Return days
+    }
   };
 
   const getTrialEndDate = () => {
     if (!profile?.trial_start_date) return "";
     const trialEnd = new Date(profile.trial_start_date);
-    trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
-    return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+    
+    if (TEST_MODE_CONFIG.showTestModeIndicator) {
+      // Add minutes in test mode
+      trialEnd.setMinutes(trialEnd.getMinutes() + TEST_MODE_CONFIG.trialDurationMinutes);
+      return trialEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    } else {
+      // Add days in production
+      trialEnd.setDate(trialEnd.getDate() + TEST_MODE_CONFIG.trialDurationDays);
+      return trialEnd.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+    }
   };
 
   if (loading) {
@@ -177,7 +202,7 @@ function App() {
       {/* Test Mode Indicator */}
       {TEST_MODE_CONFIG.showTestModeIndicator && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
-          🧪 TEST MODE ({TEST_MODE_CONFIG.trialDurationDays}-day trial)
+          🧪 TEST MODE ({TEST_MODE_CONFIG.trialDurationMinutes}-minute trial)
         </div>
       )}
 
