@@ -374,23 +374,12 @@ function App() {
             )
           }
         />
+ {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/auth" />} />
+        
+      </Routes>  {/* ✅ Close Routes tag */}
+    </>  {/* ✅ Close fragment tag */}
+  );  {/* ✅ Close return statement */}
+}  {/* ✅ Close App function */}
 
-{/* Default redirect - if user goes to root */}
-<Route 
-  path="/" 
-  element={
-    session ? (
-      <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />
-    ) : (
-      <Navigate to="/Auth" />
-    )
-  } 
-/>
-// ✅ Clean, standard URLs
-<Route path="/auth" element={<Auth />} />
-<Route path="/auth-redirect" element={<AuthRedirect />} />
-<Route path="/onboarding" element={<OnboardingChat />} />
-<Route path="/chat" element={<Chat />} />
-<Route path="/dashboard" element={<Dashboard />} />
-<Route path="/planner" element={<Planner />} />
 export default App;
