@@ -12,19 +12,19 @@ export const TEST_MODE: TestModeValue = 1; // Change to 0 for production, 1/2/3 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
   mode1: {
-    skipEmailVerification: false, // Show mock email verification
-    useMockEmailVerification: true, // Mock/instant verification
-    skipDatabaseCreation: true, // No real profile created
-    landingPage: "Auth", // MATCHED: Auth.tsx
-    showAuthRedirect: true, // MATCHED: AuthRedirect.tsx
-    redirectToOnboardingChat: true, // MATCHED: OnboardChat.tsx (not OnboardingChat)
+    skipEmailVerification: false, // CHANGED: Show email verification step
+    useMockEmailVerification: true, // NEW: Mock verification (instant)
+    skipDatabaseCreation: true,
+    landingPage: "auth",
+    autoRedirectToOnboarding: false, // CHANGED: Don't auto-redirect from auth
+    requireEmailVerificationFirst: true, // NEW: Force email verification flow
+    showAuthRedirect: true, // Show AuthRedirect.tsx after verification
     trialDurationSeconds: 30,
-    redirectToDashboard: true, // MATCHED: Dashboard.tsx
-    showPricingModalsAfterDashboard: true, // MATCHED: PricingModals.tsx
-    instantVIPUpgrade: false, // User chooses tier
+    showTierSelectionModal: true,
+    instantVIPUpgrade: false,
     hasBasicTier: true,
     showStripeCheckout: false,
-    allowBothTierSelection: true, // Both VIP and Basic work
+    allowBothTierSelection: true,
   },
 
   // Test Mode 2: Medium testing (30 minutes, no email, Stripe checkout)
