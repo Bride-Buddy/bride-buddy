@@ -12,16 +12,10 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
-  // Check session on mount — if user already logged in, go straight to app
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/chat");
-    });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/OnboardingChat");
+      if (session) navigate("/AuthRedirect");
     });
 
     return () => subscription.unsubscribe();
