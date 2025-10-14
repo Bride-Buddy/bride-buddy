@@ -19,13 +19,7 @@ interface ChatProps {
   onPromptClick?: (action: string) => void;
 }
 
-const Chat: React.FC<ChatProps> = ({
-  userName,
-  userTier,
-  lastTopic = "bridesmaid dresses",
-  onNavigate,
-  onPromptClick,
-}) => {
+const Chat: React.FC<ChatProps> = ({ userName, userTier, lastTopic, onNavigate, onPromptClick }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
 
@@ -33,7 +27,7 @@ const Chat: React.FC<ChatProps> = ({
     "https://cdn.sanity.io/images/ot0hy8f4/production/c6a6e7f9b9e8f0e0e0e0e0e0e0e0e0e0e0e0e0e0-1024x1024.png";
 
   const suggestedPrompts: SuggestedPrompt[] = [
-    { text: "Show me my progress", action: "dashboard" },
+    { text: "Show me my dashboard", action: "dashboard" },
     { text: "Pick up where we left off", action: "continue" },
     { text: "Just need to vent", action: "vent" },
     { text: "To-do today", action: "todo" },
@@ -55,7 +49,7 @@ const Chat: React.FC<ChatProps> = ({
       botResponse = "That's exactly what I'm here for! Let it out, you can't hurt my feelings 😌";
     } else if (prompt.action === "todo") {
       botResponse =
-        "Here's what I have lined up for you today! 📋\n\n💐 Call florist\nBlooms & Petals • (555) 678-9012\n\n🍰 Send final guest count\n142 guests • 73 chicken, 42 fish, 10 beef, 17 vegetarian\n\n🍽️ Confirm rehearsal dinner\nOlive Garden • (555) 456-7890 • June 19, 6:30pm\n\nI'm here if you need help with any of these!";
+        "Here's what I have lined up for you today! n\n\n\n\n\n\n\n\n\n I'm here if you need help with any of these!";
     }
 
     setMessages([
