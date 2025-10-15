@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -43,10 +43,10 @@ All colors MUST be HSL.
 
     --gradient-primary: linear-gradient(135deg, hsl(180, 35%, 45%), hsl(97, 15%, 67%));
     --gradient-subtle: linear-gradient(180deg, hsl(40, 30%, 96%), hsl(180, 35%, 85%));
-    
+
     --shadow-elegant: 0 10px 30px -10px hsl(180 35% 45% / 0.2);
     --shadow-glow: 0 0 40px hsl(36 51% 65% / 0.3);
-    
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -82,7 +82,7 @@ All colors MUST be HSL.
 
     --gradient-primary: linear-gradient(135deg, hsl(180, 35%, 55%), hsl(97, 15%, 50%));
     --gradient-subtle: linear-gradient(180deg, hsl(180, 20%, 12%), hsl(180, 20%, 16%));
-    
+
     --shadow-elegant: 0 10px 30px -10px hsl(180 35% 55% / 0.3);
     --shadow-glow: 0 0 40px hsl(36 51% 55% / 0.4);
   }
@@ -94,10 +94,15 @@ All colors MUST be HSL.
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", serif;
   }
 }
 
