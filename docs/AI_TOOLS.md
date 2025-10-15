@@ -50,13 +50,13 @@ The chat backend (`supabase/functions/chat/index.ts`) includes four AI tools tha
 - Shows remaining balance
 - Provides friendly confirmation with payment details
 
-**Example user input**: "I paid my florist a $500 deposit"
+**Example user input**: "I paid Beautiful Blooms a $500 deposit"
 
 **Confirmation message**:
 ```
 💰 **Payment Recorded!**
 
-✅ Added $500 deposit payment for **Florist**
+✅ Added $500 deposit payment for **Beautiful Blooms**
 💵 Total Paid: $500
 📝 Remaining: $1500
 ```
