@@ -83,10 +83,19 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       if (userMsgError) throw userMsgError;
 
       // Get auth token for the edge function
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`, // <-- This is correct!
+        },
+        body: JSON.stringify({
+          sessionId,
+          message: text,
+          isOnboarding,
+          userLocation,
+        }),
+      });
 
       // Call chat edge function with onboarding flag
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
