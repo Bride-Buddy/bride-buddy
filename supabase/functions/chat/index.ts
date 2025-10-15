@@ -132,9 +132,8 @@ serve(async (req) => {
 
     // CRITICAL FIX: If profile doesn't exist, create it now
     if (profileError?.code === "PGRST116") {
-      // No rows returned: create missing profile
+      // No rows returned
       console.log("🔧 Creating missing profile for user:", user.id);
-
       const { data: newProfile, error: createError } = await supabase
         .from("profiles")
         .insert({
@@ -178,6 +177,7 @@ serve(async (req) => {
         },
       );
     }
+
     // At this point, profile is guaranteed to exist (TypeScript assertion)
     if (!profile) {
       throw new Error("Profile unexpectedly null after creation/fetch");
