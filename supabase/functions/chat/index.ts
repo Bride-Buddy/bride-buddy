@@ -446,7 +446,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
         content: msg.content,
       })) || [];
 
-    // Define vendor search tool
+    // Define AI action detection tools
     const tools = [
       {
         type: "function",
@@ -474,6 +474,85 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
               },
             },
             required: ["query", "category"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "record_payment",
+          description:
+            "Record a payment made to a vendor. Use when user mentions paying a vendor (e.g., 'paid my florist the deposit', 'sent $500 to the photographer').",
+          parameters: {
+            type: "object",
+            properties: {
+              vendor_name: {
+                type: "string",
+                description: "Name of the vendor (e.g., 'florist', 'photographer', 'venue')",
+              },
+              amount: {
+                type: "number",
+                description: "Payment amount in dollars",
+              },
+              payment_type: {
+                type: "string",
+                enum: ["deposit", "partial", "full"],
+                description: "Type of payment: deposit, partial payment, or full payment",
+              },
+            },
+            required: ["vendor_name", "amount", "payment_type"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "mark_task_complete",
+          description:
+            "Mark a wedding planning task as complete. Use when user mentions completing a task (e.g., 'confirmed venue booking', 'finished guest list', 'sent invitations').",
+          parameters: {
+            type: "object",
+            properties: {
+              task_name: {
+                type: "string",
+                description: "Name of the completed task",
+              },
+              category: {
+                type: "string",
+                description: "Category of task (e.g., 'Venue', 'Catering', 'Invitations', 'Photography')",
+              },
+            },
+            required: ["task_name"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "add_vendor_quick",
+          description:
+            "Quickly add a vendor without searching. Use when user mentions adding a specific vendor they already know (e.g., 'Add photographer Sarah's Studio', 'My DJ is Mike Jones').",
+          parameters: {
+            type: "object",
+            properties: {
+              vendor_name: {
+                type: "string",
+                description: "Name of the vendor",
+              },
+              service_type: {
+                type: "string",
+                description: "Type of service (e.g., 'Photography', 'DJ', 'Catering', 'Venue', 'Flowers')",
+              },
+              amount: {
+                type: "number",
+                description: "Total contract amount if mentioned",
+              },
+              notes: {
+                type: "string",
+                description: "Any additional notes (contact info, details, etc.)",
+              },
+            },
+            required: ["vendor_name", "service_type"],
           },
         },
       },
@@ -557,13 +636,147 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
       toolCallsCount: toolCalls?.length || 0,
     });
 
-    // Handle tool calls (vendor search)
+    // Handle tool calls (all action types)
     if (toolCalls && toolCalls.length > 0) {
-      console.log("Tool calls detected:", toolCalls);
+      console.log("🔧 Tool calls detected:", toolCalls);
 
       for (const toolCall of toolCalls) {
-        if (toolCall.function.name === "search_vendors") {
-          const args = JSON.parse(toolCall.function.arguments);
+        const toolName = toolCall.function.name;
+        const args = JSON.parse(toolCall.function.arguments);
+
+        console.log(`🔧 Processing tool: ${toolName}`, args);
+
+        // PAYMENT RECORDING
+        if (toolName === "record_payment") {
+          const { vendor_name, amount, payment_type } = args;
+
+          try {
+            // Find matching vendor (case-insensitive partial match)
+            const { data: vendors } = await supabase
+              .from("vendors")
+              .select("*")
+              .eq("user_id", user.id)
+              .ilike("service", `%${vendor_name}%`);
+
+            if (vendors && vendors.length > 0) {
+              const vendor = vendors[0];
+              const newPaidAmount = (vendor.paid_amount || 0) + amount;
+              const isPaid = payment_type === "full" || newPaidAmount >= (vendor.amount || 0);
+
+              const { error: updateError } = await supabase
+                .from("vendors")
+                .update({
+                  paid_amount: newPaidAmount,
+                  paid: isPaid,
+                })
+                .eq("id", vendor.id);
+
+              if (updateError) {
+                console.error("Payment update error:", updateError);
+                assistantMessage += `\n\n⚠️ I had trouble recording that payment. Please try adding it manually in your Vendor Tracker.`;
+              } else {
+                assistantMessage += `\n\n💰 **Payment Recorded!**\n\n✅ Added $${amount} ${payment_type} payment for **${vendor.service}**\n💵 Total Paid: $${newPaidAmount}\n${isPaid ? "🎉 Fully paid!" : `📝 Remaining: $${(vendor.amount || 0) - newPaidAmount}`}`;
+              }
+            } else {
+              assistantMessage += `\n\n🤔 I couldn't find a vendor matching "${vendor_name}" in your tracker. Would you like to add them first?`;
+            }
+          } catch (error) {
+            console.error("Record payment error:", error);
+            assistantMessage += `\n\n⚠️ I had trouble recording that payment. Please try again!`;
+          }
+        }
+
+        // TASK COMPLETION
+        else if (toolName === "mark_task_complete") {
+          const { task_name, category } = args;
+
+          try {
+            // Find matching task in checklist
+            const { data: tasks } = await supabase
+              .from("checklist")
+              .select("*")
+              .eq("user_id", user.id)
+              .ilike("title", `%${task_name}%`)
+              .eq("completed", false)
+              .limit(1);
+
+            if (tasks && tasks.length > 0) {
+              const task = tasks[0];
+              const { error: updateError } = await supabase
+                .from("checklist")
+                .update({ completed: true })
+                .eq("id", task.id);
+
+              if (updateError) {
+                console.error("Task completion error:", updateError);
+                assistantMessage += `\n\n⚠️ I had trouble marking that task as complete. Please try manually in your checklist.`;
+              } else {
+                assistantMessage += `\n\n✅ **Task Complete!**\n\n🎉 Marked "${task.title}" as done!\n\nKeep up the great work! 💪✨`;
+              }
+            } else {
+              // Create new task and mark complete
+              const { error: insertError } = await supabase.from("checklist").insert({
+                user_id: user.id,
+                title: task_name,
+                category: category || "General",
+                priority: "medium",
+                completed: true,
+              });
+
+              if (insertError) {
+                console.error("Task creation error:", insertError);
+                assistantMessage += `\n\n⚠️ I had trouble adding that task. Please try manually in your checklist.`;
+              } else {
+                assistantMessage += `\n\n✅ **Task Complete!**\n\n🎉 Added and completed "${task_name}"!\n\nGreat progress! 💖`;
+              }
+            }
+          } catch (error) {
+            console.error("Mark task complete error:", error);
+            assistantMessage += `\n\n⚠️ I had trouble updating that task. Please try again!`;
+          }
+        }
+
+        // QUICK VENDOR ADD
+        else if (toolName === "add_vendor_quick") {
+          const { vendor_name, service_type, amount, notes } = args;
+
+          try {
+            // Check if vendor already exists
+            const { data: existing } = await supabase
+              .from("vendors")
+              .select("name")
+              .eq("user_id", user.id)
+              .ilike("name", vendor_name)
+              .limit(1);
+
+            if (existing && existing.length > 0) {
+              assistantMessage += `\n\n💡 You already have "${vendor_name}" in your vendor tracker! Would you like to update their details?`;
+            } else {
+              const { error: insertError } = await supabase.from("vendors").insert({
+                user_id: user.id,
+                name: vendor_name,
+                service: service_type,
+                amount: amount || 0,
+                paid: false,
+                paid_amount: 0,
+                notes: notes || "",
+              });
+
+              if (insertError) {
+                console.error("Quick vendor add error:", insertError);
+                assistantMessage += `\n\n⚠️ I had trouble adding that vendor. Please try manually in your Vendor Tracker.`;
+              } else {
+                assistantMessage += `\n\n✅ **Vendor Added!**\n\n📸 **${vendor_name}** - ${service_type}\n${amount ? `💰 Budget: $${amount}` : "💵 No budget set yet"}\n${notes ? `📝 ${notes}` : ""}\n\nYou can view and edit in your Vendor Tracker! 💕`;
+              }
+            }
+          } catch (error) {
+            console.error("Add vendor quick error:", error);
+            assistantMessage += `\n\n⚠️ I had trouble adding that vendor. Please try again!`;
+          }
+        }
+
+        // VENDOR SEARCH (existing functionality)
+        else if (toolName === "search_vendors") {
           const { query, category, radius_km = 50 } = args;
 
           if (!userLocation?.latitude || !userLocation?.longitude) {
@@ -610,7 +823,7 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                 };
               });
 
-              // Auto-add vendors to database (for both onboarding and regular chat)
+              // Auto-add vendors to database
               if (vendors.length > 0) {
                 const vendorInserts = vendors.map((v: any) => ({
                   user_id: user.id,
@@ -622,8 +835,6 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                 }));
 
                 try {
-                  // Use upsert to prevent duplicates based on user_id and name
-                  // Check for existing vendors to avoid duplicates
                   const existingVendorsCheck = await supabase
                     .from("vendors")
                     .select("name")
@@ -642,17 +853,15 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                     if (insertError) {
                       console.error("Vendor insert error:", insertError);
                     } else {
-                      console.log(`Added ${newVendors.length} new vendors for user ${user.id}`);
+                      console.log(`✅ Added ${newVendors.length} new vendors for user ${user.id}`);
                     }
-                  } else {
-                    console.log("All vendors already exist in tracker");
                   }
                 } catch (err) {
                   console.error("Vendor upsert failed:", err);
                 }
               }
 
-              // Format vendor results for the AI response with emoji-rich confirmation
+              // Format vendor results
               if (vendors.length === 1) {
                 const v = vendors[0];
                 assistantMessage += `\n\n✅ Added **${v.name}** to your vendor tracker!\n\n📸 **Service:** ${v.service_type}\n📞 **Phone:** ${v.phone || "Not available"}\n🌐 **Website:** ${v.website || "Not available"}\n📍 **Address:** ${v.address || "Not available"}\n\nYou can view and edit this in your Vendor Tracker! 💕`;
@@ -663,14 +872,14 @@ Remember: You're not just a planner, you're their wedding BFF! 💕✨`;
                       `${idx + 1}. **${v.name}**\n   📸 Service: ${v.service_type}\n   📍 ${v.address || "Not available"}\n   📞 ${v.phone || "Not available"}`,
                   )
                   .join("\n\n");
-                assistantMessage += `\n\n✅ I found ${vendors.length} vendors matching "${query}":\n\n${vendorList}\n\nI've added ${vendors.length === 1 ? "this" : "these"} to your vendor tracker! You can view details in your Vendor Tracker. 💕`;
+                assistantMessage += `\n\n✅ I found ${vendors.length} vendors matching "${query}":\n\n${vendorList}\n\nI've added them to your vendor tracker! 💕`;
               }
             } else {
-              assistantMessage += `\n\n😊 I couldn't find any vendors matching "${query}" within ${radius_km}km of your location. Try searching with different keywords or expand your search radius!`;
+              assistantMessage += `\n\n😊 I couldn't find any vendors matching "${query}" within ${radius_km}km of your location. Try different keywords or expand your search radius!`;
             }
           } catch (osmError) {
             console.error("OSM search error:", osmError);
-            assistantMessage += `\n\n⚠️ I had trouble searching for vendors right now. Please try again in a moment!`;
+            assistantMessage += `\n\n⚠️ I had trouble searching for vendors right now. Please try again!`;
           }
         }
       }
