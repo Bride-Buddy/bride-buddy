@@ -13,19 +13,16 @@ export default {
       },
     },
     extend: {
-  // ...colors
-  boxShadow: {
-    elegant: "var(--shadow-elegant)",
-    glow: "var(--shadow-glow)",
-  },
-  backgroundImage: {
-    'gradient-primary': 'var(--gradient-primary)',
-    'gradient-subtle': 'var(--gradient-subtle)',
-  },
-  transitionProperty: {
-    smooth: "var(--transition-smooth)",
-  },
-}
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -60,6 +57,17 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      boxShadow: {
+        elegant: "var(--shadow-elegant)",
+        glow: "var(--shadow-glow)",
+      },
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-subtle': 'var(--gradient-subtle)',
+      },
+      transitionProperty: {
+        smooth: "var(--transition-smooth)",
       },
       borderRadius: {
         lg: "var(--radius)",
