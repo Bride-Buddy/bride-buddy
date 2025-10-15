@@ -58,8 +58,8 @@ const AuthRedirect = () => {
           return;
         }
 
-        // Returning user with complete data → Dashboard
-        navigate(ROUTES.DASHBOARD);
+        // Returning user with complete data → Chat
+        navigate(ROUTES.CHAT);
       } catch (error) {
         console.error("Unexpected error:", error);
         navigate(ROUTES.AUTH);
