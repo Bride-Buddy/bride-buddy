@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sparkles, Mail } from "lucide-react";
 import logo from "@/assets/bride-buddy-logo-ring.png";
+import { ROUTES } from "@/constants/routes";
 
 const EmailVerification = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const EmailVerification = () => {
   useEffect(() => {
     // If no email in state, redirect back to auth
     if (!email) {
-      navigate("/Auth");
+      navigate(ROUTES.AUTH);
     }
   }, [email, navigate]);
 
@@ -70,7 +71,7 @@ const EmailVerification = () => {
         </div>
 
         <button
-          onClick={() => navigate("/Auth")}
+          onClick={() => navigate(ROUTES.AUTH)}
           className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors"
         >
           ← Back to login

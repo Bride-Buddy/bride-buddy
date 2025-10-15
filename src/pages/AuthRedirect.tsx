@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCurrentModeConfig } from "@/config/testMode";
+import { ROUTES } from "@/constants/routes";
 
 const AuthRedirect = () => {
   const navigate = useNavigate();
@@ -18,12 +19,12 @@ const AuthRedirect = () => {
         if (error) {
           console.error("Auth redirect error:", error);
           toast.error("Authentication failed");
-          navigate("/auth");
+          navigate(ROUTES.AUTH);
           return;
         }
 
         if (!session) {
-          navigate("/auth");
+          navigate(ROUTES.AUTH);
           return;
         }
 
@@ -31,7 +32,7 @@ const AuthRedirect = () => {
 
         // MODE 1: Skip DB, go straight to onboarding-chat
         if ("skipDatabaseCreation" in config && config.skipDatabaseCreation) {
-          navigate("/onboarding-chat", { state: { userId: session.user.id, userName: session.user.email } });
+          navigate(ROUTES.ONBOARDING_CHAT, { state: { userId: session.user.id, userName: session.user.email } });
           return;
         }
 
@@ -51,17 +52,17 @@ const AuthRedirect = () => {
 
         // New user (no profile OR no timeline data) → onboarding-chat
         if (!profileData || !timelineData?.engagement_date || !timelineData?.wedding_date) {
-          navigate("/onboarding-chat", {
+          navigate(ROUTES.ONBOARDING_CHAT, {
             state: { userId: session.user.id, userName: profileData?.full_name || session.user.email },
           });
           return;
         }
 
         // Returning user with complete data → Dashboard
-        navigate("/dashboard");
+        navigate(ROUTES.DASHBOARD);
       } catch (error) {
         console.error("Unexpected error:", error);
-        navigate("/auth");
+        navigate(ROUTES.AUTH);
       }
     };
 

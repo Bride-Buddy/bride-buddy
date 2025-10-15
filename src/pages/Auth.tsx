@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/bride-buddy-logo-ring.png";
 import { getCurrentModeConfig, showTestModeIndicator } from "@/config/testMode";
+import { ROUTES } from "@/constants/routes";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Auth = () => {
         if (session) {
           // User is already logged in - redirect them automatically
           console.log("Active session found, redirecting...");
-          navigate("/auth-redirect");
+          navigate(ROUTES.AUTH_REDIRECT);
         } else {
           // No active session - show auth form
           setCheckingSession(false);
@@ -47,7 +48,7 @@ const Auth = () => {
       if (session) {
         // Session created - user logged in
         console.log("Auth state changed - session active");
-        navigate("/auth-redirect");
+        navigate(ROUTES.AUTH_REDIRECT);
       }
     });
     return () => subscription.unsubscribe();
@@ -129,7 +130,7 @@ const Auth = () => {
         : "Check your email! Click the link to start your free trial.";
       toast.success(message);
 
-      navigate("/EmailVerification", {
+      navigate(ROUTES.EMAIL_VERIFICATION, {
         state: {
           email,
           isNewUser: !isLogin,

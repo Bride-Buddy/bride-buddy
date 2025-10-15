@@ -10,6 +10,7 @@ import {
   getTrialEndDate as formatTrialEndDate,
   getTrialUnitLabel,
 } from "@/config/testMode";
+import { ROUTES } from "@/constants/routes";
 
 import Chat from "./components/Chat";
 import Dashboard from "./pages/Dashboard";
@@ -360,47 +361,47 @@ function App() {
       <Routes>
         {/* Login Page */}
         <Route
-          path="/auth"
-          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
+          path={ROUTES.AUTH}
+          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? ROUTES.ONBOARDING_CHAT : ROUTES.CHAT} />}
         />
 
         {/* Email verification page */}
-        <Route path="/email-verification" element={<EmailVerification />} />
+        <Route path={ROUTES.EMAIL_VERIFICATION} element={<EmailVerification />} />
 
         {/* Post-login redirect handler */}
-        <Route path="/auth-redirect" element={<AuthRedirect />} />
+        <Route path={ROUTES.AUTH_REDIRECT} element={<AuthRedirect />} />
 
         {/* Onboarding for new users */}
         <Route
-          path="/OnboardingChat"
+          path={ROUTES.ONBOARDING_CHAT}
           element={
             session && profile ? (
               <OnboardingChat userId={session.user.id} userName={profile.full_name || ""} />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to={ROUTES.AUTH} />
             )
           }
         />
 
         {/* Main chat interface */}
-        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/Auth" />} />
+        <Route path={ROUTES.CHAT} element={session ? <Chat userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />} />
 
         {/* Dashboard */}
-        <Route path="/Dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/Auth" />} />
+        <Route path={ROUTES.DASHBOARD} element={session ? <Dashboard userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />} />
 
         {/* Planner */}
         <Route
-          path="/planner"
+          path={ROUTES.PLANNER}
           element={
             session ? (
               <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to={ROUTES.AUTH} />
             )
           }
         />
         {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/auth" />} />
+        <Route path="*" element={<Navigate to={ROUTES.AUTH} />} />
       </Routes>
     </>
   );

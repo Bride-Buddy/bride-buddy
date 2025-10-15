@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/bride-buddy-logo-new.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
 
 interface Message {
   type: "user" | "bot";
@@ -129,7 +130,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
             toast.success("Your personalized dashboard is ready! 💙");
-            navigate("/dashboard");
+            navigate(ROUTES.DASHBOARD);
           }, 1500);
         }
       }
@@ -151,7 +152,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
           <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
         </div>
         <button
-          onClick={() => navigate("/chat")}
+          onClick={() => navigate(ROUTES.CHAT)}
           className="p-2 hover:bg-white/20 rounded-full transition-all"
           aria-label="Go to Dashboard"
         >
