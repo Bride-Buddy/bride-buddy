@@ -11,7 +11,7 @@ const EmailVerification = () => {
   useEffect(() => {
     // If no email in state, redirect back to auth
     if (!email) {
-      navigate("/Auth");
+      navigate("/auth");
     }
   }, [email, navigate]);
 
@@ -70,7 +70,7 @@ const EmailVerification = () => {
         </div>
 
         <button
-          onClick={() => navigate("/Auth")}
+          onClick={() => navigate("/auth")}
           className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors"
         >
           ← Back to login

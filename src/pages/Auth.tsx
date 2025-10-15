@@ -129,7 +129,7 @@ const Auth = () => {
         : "Check your email! Click the link to start your free trial.";
       toast.success(message);
 
-      navigate("/EmailVerification", {
+      navigate("/email-verification", {
         state: {
           email,
           isNewUser: !isLogin,

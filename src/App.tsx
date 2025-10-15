@@ -361,7 +361,7 @@ function App() {
         {/* Login Page */}
         <Route
           path="/auth"
-          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/OnboardingChat" : "/chat"} />}
+          element={!session ? <Auth /> : <Navigate to={needsOnboarding ? "/onboarding-chat" : "/chat"} />}
         />
 
         {/* Email verification page */}
@@ -372,21 +372,21 @@ function App() {
 
         {/* Onboarding for new users */}
         <Route
-          path="/OnboardingChat"
+          path="/onboarding-chat"
           element={
             session && profile ? (
               <OnboardingChat userId={session.user.id} userName={profile.full_name || ""} />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/auth" />
             )
           }
         />
 
         {/* Main chat interface */}
-        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/Auth" />} />
+        <Route path="/chat" element={session ? <Chat userId={session.user.id} /> : <Navigate to="/auth" />} />
 
         {/* Dashboard */}
-        <Route path="/Dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/Auth" />} />
+        <Route path="/dashboard" element={session ? <Dashboard userId={session.user.id} /> : <Navigate to="/auth" />} />
 
         {/* Planner */}
         <Route
@@ -395,7 +395,7 @@ function App() {
             session ? (
               <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
             ) : (
-              <Navigate to="/Auth" />
+              <Navigate to="/auth" />
             )
           }
         />
