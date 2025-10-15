@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, DollarSign, TrendingUp, ListChecks } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 
 interface DashboardProps {
   userId: string;
@@ -113,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              window.location.href = "/auth";
+              navigate(ROUTES.AUTH);
             }}
             className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded-lg transition-colors"
           >
@@ -187,13 +188,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
         <Card className="p-6 bg-white shadow-lg">
           <div className="flex gap-4">
             <Button
-              onClick={() => navigate("/chat")}
+              onClick={() => navigate(ROUTES.CHAT)}
               className="flex-1 bg-purple-400 hover:bg-purple-500 text-white py-6 text-lg"
             >
               💬 Chat with Bride Buddy
             </Button>
             <Button
-              onClick={() => navigate("/planner")}
+              onClick={() => navigate(ROUTES.PLANNER)}
               variant="outline"
               className="flex-1 border-purple-300 text-purple-400 hover:bg-purple-50 py-6 text-lg"
             >

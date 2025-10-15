@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardView from "./DashboardView";
+import { ROUTES } from "@/constants/routes";
 
 import { PersonalizedWelcome } from "./PersonalizedWelcome";
 
@@ -269,7 +270,7 @@ const Chat = ({ userId }: ChatProps) => {
     view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard",
   ) => {
     if (view === "dashboard") {
-      navigate("/dashboard");
+      navigate(ROUTES.DASHBOARD);
     } else if (view) {
       setDashboardView(view);
     } else {
