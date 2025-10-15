@@ -132,39 +132,32 @@ serve(async (req) => {
 
     // CRITICAL FIX: If profile doesn't exist, create it now
     if (profileError?.code === "PGRST116") {
-  // No rows returned: create missing profile
-  console.log("🔧 Creating missing profile for user:", user.id);
+      // No rows returned: create missing profile
+      console.log("🔧 Creating missing profile for user:", user.id);
 
-  // Defensive: fallback values
-  const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Unknown";
-  const phoneNumber = user.phone || "";
+      const { data: newProfile, error: createError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: user.id,
+          full_name: user.user_metadata?.full_name || user.email?.split("@")[0],
+          phone_number: user.phone,
+        })
+        .select()
+        .single();
 
-  const { data: newProfile, error: createError } = await supabase
-    .from("profiles")
-    .insert({
-      user_id: user.id,
-      full_name: fullName,
-      phone_number: phoneNumber,
-      // Add other required fields with safe defaults if needed
-    })
-    .select()
-    .single();
-
-  if (createError) {
-    console.error("❌ Failed to create profile for user:", user.id, createError);
-    return new Response(
-      JSON.stringify({
-        error: "Failed to create user profile",
-        details: createError.message,
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      if (createError) {
+        console.error("❌ Failed to create profile:", createError);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to create user profile",
+            details: createError.message,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
-    );
-  }
-  profile = newProfile;
-}
 
       // Also create timeline
       await supabase.from("timeline").insert({ user_id: user.id });
@@ -185,7 +178,6 @@ serve(async (req) => {
         },
       );
     }
-
     // At this point, profile is guaranteed to exist (TypeScript assertion)
     if (!profile) {
       throw new Error("Profile unexpectedly null after creation/fetch");
@@ -331,7 +323,7 @@ What would you like to do? 💕`;
     let systemPrompt = "";
 
     if (isOnboarding) {
-     systemPrompt = `You are Bride Buddy 💍, a warm and friendly AI wedding planning assistant chatting with someone about their upcoming wedding!
+      systemPrompt = `You are Bride Buddy 💍, a warm and friendly AI wedding planning assistant chatting with someone about their upcoming wedding!
 
 YOUR GOAL: Have a natural, flowing conversation to learn about their wedding. You need to gather:
 • **REQUIRED (minimum):** Engagement date and wedding date
