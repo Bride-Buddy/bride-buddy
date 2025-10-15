@@ -14,7 +14,7 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
-// --- Check for existing session on mount (like Gmail/Facebook) ---
+  // --- Check for existing session on mount (like Gmail/Facebook) ---
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -45,21 +45,22 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-         // Session created - user logged in
+        // Session created - user logged in
         console.log("Auth state changed - session active");
-      navigate("/auth-redirect");
+        navigate("/auth-redirect");
       }
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   // --- Handle Magic Link Sign-In / Sign-Up ---
-   const handleMagicLink = async () => {
+  const handleMagicLink = async () => {
     if (!email.trim()) {
       toast.error("Please enter your email");
       return;
     }
-if (!isLogin && !name.trim()) {
+
+    if (!isLogin && !name.trim()) {
       toast.error("Please enter your name");
       return;
     }
@@ -78,7 +79,7 @@ if (!isLogin && !name.trim()) {
 
       // If user doesn't exist, sign them up
       if (signInError) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password: "testmode123",
           options: {
@@ -93,12 +94,14 @@ if (!isLogin && !name.trim()) {
         }
 
         toast.success("Account created! Redirecting...");
-       // Session is automatically created and stored by Supabase
+        // Session is automatically created and stored by Supabase
       } else {
         toast.success("Welcome back! Redirecting...");
         // Session is automatically created and stored by Supabase
-          setLoading(false);
-       // Auth state change listener will handle redirect
+      }
+
+      setLoading(false);
+      // Auth state change listener will handle redirect
       return;
     }
 
@@ -117,6 +120,7 @@ if (!isLogin && !name.trim()) {
       },
     });
     setLoading(false);
+
     if (error) {
       toast.error(error.message);
     } else {
@@ -124,7 +128,8 @@ if (!isLogin && !name.trim()) {
         ? "Check your email! Click the link to sign in."
         : "Check your email! Click the link to start your free trial.";
       toast.success(message);
-      navigate("/email-verification", {
+
+      navigate("/EmailVerification", {
         state: {
           email,
           isNewUser: !isLogin,
@@ -132,8 +137,10 @@ if (!isLogin && !name.trim()) {
       });
     }
   };
+
   const config = getCurrentModeConfig();
-// Show loading screen while checking for existing session
+
+  // Show loading screen while checking for existing session
   if (checkingSession) {
     return (
       <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
@@ -155,7 +162,7 @@ if (!isLogin && !name.trim()) {
       <div className="flex-1 flex items-center justify-center">
         <img src={logo} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
       </div>
-      
+
       <div className="w-full space-y-4 pb-8">
         <h2
           className="text-2xl font-bold text-center text-purple-400 mb-2"
@@ -187,6 +194,7 @@ if (!isLogin && !name.trim()) {
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
                 Name <span className="text-red-400">*</span>
+              </label>
               <input
                 type="text"
                 placeholder="Enter your name"
@@ -222,8 +230,8 @@ if (!isLogin && !name.trim()) {
             {loading ? <Sparkles className="animate-spin" size={20} /> : <Send size={20} />}
             {loading ? "Sending magic link..." : isLogin ? "Send Sign In Link" : "Start Free Trial"}
           </button>
-              
-        <div className="text-center text-xs text-gray-500 pt-2">
+
+          <div className="text-center text-xs text-gray-500 pt-2">
             {isLogin ? (
               <p>We'll send a magic link to your email - no password needed!</p>
             ) : (
@@ -236,9 +244,9 @@ if (!isLogin && !name.trim()) {
           onClick={() => setIsLogin(!isLogin)}
           className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors"
           disabled={loading}
-           >
-          {isLogin ? "New to Bride Buddy? Start your Free Trial below!" : "Already have an account? Sign in"}
-          </button>
+        >
+          {isLogin ? "New to Bride Buddy? Claim your 7-day Free Trial below" : "Already have an account? Sign in"}
+        </button>
       </div>
     </div>
   );
