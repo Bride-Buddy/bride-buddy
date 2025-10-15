@@ -143,7 +143,8 @@ serve(async (req) => {
         })
         .select()
         .single();
-
+ // error handling...
+}
       if (createError) {
         console.error("❌ Failed to create profile:", createError);
         return new Response(
