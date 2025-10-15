@@ -32,36 +32,25 @@ const EmailVerification = () => {
           </div>
 
           <div className="space-y-3">
-            <h2
-              className="text-2xl font-bold text-purple-400"
-              style={{ fontFamily: "Quicksand, sans-serif" }}
-            >
+            <h2 className="text-2xl font-bold text-primary" style={{ fontFamily: "Quicksand, sans-serif" }}>
               Check Your Inbox! ✨
             </h2>
-            
-            <p className="text-gray-600 text-base">
-              We've sent a magic link to
-            </p>
-            
-            <p className="text-purple-500 font-semibold text-lg break-all">
-              {email}
-            </p>
+
+            <p className="text-gray-600 text-base">We've sent a magic link to</p>
+
+            <p className="text-purple-500 font-semibold text-lg break-all">{email}</p>
 
             <div className="pt-4 space-y-2">
               <p className="text-gray-700 font-medium">
                 Click the link in your email to continue your wedding planning journey! 💕
               </p>
-              
-              <p className="text-sm text-gray-500">
-                The link will expire in 60 minutes
-              </p>
+
+              <p className="text-sm text-gray-500">The link will expire in 60 minutes</p>
             </div>
           </div>
 
           <div className="pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-3">
-              Didn't receive the email?
-            </p>
+            <p className="text-sm text-gray-600 mb-3">Didn't receive the email?</p>
             <ul className="text-xs text-gray-500 space-y-1 text-left">
               <li>• Check your spam/junk folder</li>
               <li>• Make sure you entered the correct email</li>
