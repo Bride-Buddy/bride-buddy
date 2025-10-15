@@ -100,21 +100,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
             </h1>
             <p className="text-gray-600 mt-2">Here's your wedding planning overview</p>
           </div>
-        </div>
-        // Find the header section in Dashboard.tsx (around line 120)
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
-              Welcome back, {userName}! 💕
-            </h1>
-            <p className="text-gray-600 mt-2">Here's your wedding planning overview</p>
-          </div>
 
-          {/* 👇 ADD THIS SIGN OUT BUTTON */}
+          {/* Sign Out Button */}
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              navigate(ROUTES.AUTH);
+              window.location.href = ROUTES.AUTH;
             }}
             className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded-lg transition-colors"
           >
