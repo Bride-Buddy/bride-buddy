@@ -13,8 +13,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 
 import Chat from "./components/Chat";
-import Dashboard from "./pages/Dashboard";
-import Planner from "./pages/Planner";
+import PlannerWorkspace from "./pages/PlannerWorkspace";
 import Auth from "./pages/Auth";
 import AuthRedirect from "./pages/AuthRedirect";
 import EmailVerification from "./pages/EmailVerification";
@@ -386,20 +385,14 @@ function App() {
         {/* Main chat interface */}
         <Route path={ROUTES.CHAT} element={session ? <Chat userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />} />
 
-        {/* Dashboard */}
-        <Route path={ROUTES.DASHBOARD} element={session ? <Dashboard userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />} />
-
-        {/* Planner */}
+        {/* Planner Workspace (unified dashboard + planner) */}
         <Route
           path={ROUTES.PLANNER}
-          element={
-            session ? (
-              <Planner budget={0} spent={0} plannerCategories={[]} onNavigate={(view) => navigate(`/${view}`)} />
-            ) : (
-              <Navigate to={ROUTES.AUTH} />
-            )
-          }
+          element={session ? <PlannerWorkspace userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />}
         />
+        
+        {/* Legacy routes redirect to planner */}
+        <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.PLANNER} replace />} />
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to={ROUTES.AUTH} />} />
       </Routes>

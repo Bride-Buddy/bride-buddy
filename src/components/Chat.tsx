@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DashboardView from "./DashboardView";
 import { ROUTES } from "@/constants/routes";
 
 import { PersonalizedWelcome } from "./PersonalizedWelcome";
@@ -29,9 +28,6 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<
-    "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null
-  >(null);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
@@ -265,14 +261,9 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (
-    action: string,
-    view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard",
-  ) => {
-    if (view === "dashboard") {
-      navigate(ROUTES.DASHBOARD);
-    } else if (view) {
-      setDashboardView(view);
+  const handleQuickReply = (action: string, view?: "planner") => {
+    if (view === "planner") {
+      navigate(ROUTES.PLANNER);
     } else {
       setInput(action);
     }
@@ -288,7 +279,6 @@ const Chat = ({ userId }: ChatProps) => {
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
       <PersonalizedWelcome userId={userId} />
-      <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
 
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
@@ -302,53 +292,32 @@ const Chat = ({ userId }: ChatProps) => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard", "dashboard")}
+                    onClick={() => handleQuickReply("Show me my planner", "planner")}
                     variant="default"
                     className="hover:bg-primary/90"
                   >
-                    🌸 View Dashboard
+                    🌸 View Planner
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard", "overview")}
+                    onClick={() => handleQuickReply("What are my upcoming tasks?")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    Quick Overview
+                    📋 My Tasks
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show my full checklist", "checklist")}
+                    onClick={() => handleQuickReply("Show my budget status")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    Full Checklist
+                    💰 Budget
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("What are my tasks for today?", "todo")}
+                    onClick={() => handleQuickReply("What vendors do I have?")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    To-Do Today
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my finance tracker", "finance")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Finance Tracker
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my vendor tracker", "vendors")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Vendor Tracker
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my wedding timeline", "timeline")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Wedding Timeline
+                    👥 Vendors
                   </Button>
                 </div>
               </>
