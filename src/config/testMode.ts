@@ -7,7 +7,7 @@
 // TEST_MODE = 3: Full email verification, complete onboarding flow, production-ready testing
 
 type TestModeValue = 0 | 1 | 2 | 3;
-export const TEST_MODE: TestModeValue = 1; // Change to 0 for production, 1/2/3 for testing
+export const TEST_MODE: TestModeValue = 0; // Change to 0 for production, 1/2/3 for testing
 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
