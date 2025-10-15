@@ -35,6 +35,17 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
 
   useEffect(() => {
     const initSession = async () => {
+      // Verify we have a valid session before initializing
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error("No valid session found:", sessionError);
+        toast.error("Please log in to continue");
+        navigate(ROUTES.AUTH);
+        return;
+      }
+
+      console.log("Creating chat session for user:", userId);
       const { data, error } = await supabase
         .from("chat_sessions")
         .insert({ user_id: userId, title: "Onboarding Session" })
@@ -42,16 +53,22 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         .single();
 
       if (error) {
-        console.error("Error creating session:", error);
-        toast.error("Failed to start onboarding");
+        console.error("Error creating chat session:", error);
+        toast.error("Failed to start onboarding. Please try again.");
+        
+        // If it's an auth error, redirect to login
+        if (error.message?.includes("JWT") || error.message?.includes("authentication")) {
+          navigate(ROUTES.AUTH);
+        }
         return;
       }
 
+      console.log("Chat session created:", data.id);
       setSessionId(data.id);
     };
 
     initSession();
-  }, [userId]);
+  }, [userId, navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -64,6 +81,16 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
 
   const handleSendMessage = async (text: string, isSystemTrigger = false) => {
     if (!text.trim() || !sessionId) return;
+
+    // Check for valid session before proceeding
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error("Session error:", sessionError);
+      toast.error("Your session has expired. Please log in again.");
+      navigate(ROUTES.AUTH);
+      return;
+    }
 
     const userMessage: Message = { type: "user", text };
     if (!isSystemTrigger) {
@@ -80,24 +107,13 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         content: text,
       });
 
-      if (userMsgError) throw userMsgError;
+      if (userMsgError) {
+        console.error("Failed to save user message:", userMsgError);
+        throw new Error("Failed to save message");
+      }
 
-      // Get auth token for the edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`, // <-- This is correct!
-        },
-        body: JSON.stringify({
-          sessionId,
-          message: text,
-          isOnboarding,
-          userLocation,
-        }),
-      });
-
-      // Call chat edge function with onboarding flag
+      // Call chat edge function with onboarding flag and valid access token
+      console.log("Calling chat function with session token");
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
@@ -113,8 +129,26 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get response");
+        console.error("Chat function error:", errorData);
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          toast.error("Your session has expired. Please log in again.");
+          navigate(ROUTES.AUTH);
+          return;
+        } else if (response.status === 403) {
+          toast.error("Access denied. Please try again.");
+          navigate(ROUTES.AUTH);
+          return;
+        } else if (response.status === 429) {
+          toast.error("Daily message limit reached. Upgrade to VIP for unlimited messages! 💙");
+          return;
+        }
+        
+        throw new Error(errorData.error || "Failed to get response from Bride Buddy");
       }
+
+      console.log("Chat function response successful");
 
       // Fetch the latest bot message from the database
       const { data: latestMessages, error: fetchError } = await supabase
@@ -125,7 +159,10 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         .order("created_at", { ascending: false })
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Failed to fetch bot message:", fetchError);
+        throw new Error("Failed to retrieve response");
+      }
 
       if (latestMessages && latestMessages.length > 0) {
         const botMessage = latestMessages[0];
