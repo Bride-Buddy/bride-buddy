@@ -164,7 +164,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         {showPrompt && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full space-y-6 px-6">
             <div className="text-center space-y-3">
-              <h2 className="text-2xl font-bold text-purple-400" style={{ fontFamily: "Quicksand, sans-serif" }}>
+              <h2 className="text-2xl font-bold text-primary" style={{ fontFamily: "Quicksand, sans-serif" }}>
                 Welcome, {userName}! 💕
               </h2>
               <p className="text-gray-600">I'm so excited to help you plan your big day!</p>
