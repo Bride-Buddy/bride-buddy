@@ -40,19 +40,55 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
+  // --- Create profile in public.profiles if it doesn't exist ---
+  const createProfileIfNotExists = async (user_id: string, name: string, email: string, location: string) => {
+    // Check if profile exists
+    const { data: existing, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user_id)
+      .single();
+
+    if (existing) return; // Profile already exists
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      toast.error("Error checking existing profile");
+      return;
+    }
+
+    // Insert new profile
+    const { error } = await supabase.from('profiles').insert([
+      {
+        user_id,
+        full_name: name,
+        username: email, // You can change this to a username field if you have one
+        location: location
+      }
+    ]);
+    if (error) {
+      toast.error("Failed to create user profile: " + error.message);
+    }
+  };
+
   // --- Listen for auth state changes ---
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         // Session created - user logged in
         console.log("Auth state changed - session active");
+        const user = session.user;
+        // Create profile if not exists on signup
+        if (!isLogin) {
+          await createProfileIfNotExists(user.id, name, email, locationText);
+        }
         navigate(ROUTES.AUTH_REDIRECT);
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+    // eslint-disable-next-line
+  }, [navigate, name, email, locationText, isLogin]);
 
   // --- Handle sending OTP via Supabase Edge Function ---
   const handleSendEmailOtp = async () => {
@@ -70,6 +106,34 @@ const Auth = () => {
       toast.error(error.message);
     } else {
       toast.success("OTP email sent! Check your inbox.");
+    }
+  };
+
+  // --- Handle Magic Link Sign In/Sign Up ---
+  const handleMagicLink = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    if (!isLogin && (!name.trim() || !locationText.trim())) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    setLoading(true);
+    // Send magic link
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Optionally pass data for signup, e.g. to show on confirmation page
+        emailRedirectTo: window.location.origin + ROUTES.AUTH_REDIRECT,
+      },
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Check your email for the magic link!");
     }
   };
 
@@ -174,7 +238,7 @@ const Auth = () => {
           <button
             onClick={handleMagicLink}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-base font-bold flex items-center justify-center"
           >
             {loading ? <Sparkles className="animate-spin" size={20} /> : <Send size={20} />}
             {loading ? "Sending magic link..." : isLogin ? "Send Sign In Link" : "Start Free Trial"}
@@ -183,7 +247,7 @@ const Auth = () => {
           <button
             onClick={handleSendEmailOtp}
             disabled={loading || !email}
-            className="w-full mt-2 bg-gradient-to-r from-primary-glow to-secondary text-white py-3 rounded-xl shadow hover:shadow-lg transition-all duration-200 text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-2 bg-gradient-to-r from-primary-glow to-secondary text-white py-3 rounded-xl shadow hover:shadow-lg transition-all duration-200 text-base font-semibold flex items-center justify-center"
           >
             {loading ? <Sparkles className="animate-spin" size={18} /> : <Mail size={18} />}
             {loading ? "Sending OTP..." : "Send OTP Email"}
