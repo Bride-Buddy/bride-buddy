@@ -199,7 +199,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
 
   return (
     <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
-      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+      <div className="bg-gradient-to-r from-primary to-secondary px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
         </div>
@@ -225,7 +225,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
             <div className="w-full max-w-sm">
               <button
                 onClick={handleStartOnboarding}
-                className="w-full bg-gradient-to-r from-purple-400 to-blue-400 text-white py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
               >
                 Let's get this party planning started! 🎉
               </button>
@@ -238,7 +238,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                     msg.type === "user"
-                      ? "bg-purple-300 text-white rounded-br-sm"
+                      ? "bg-primary text-white rounded-br-sm"
                       : "bg-white text-gray-800 shadow-md rounded-bl-sm"
                   }`}
                 >
@@ -251,15 +251,15 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
                 <div className="bg-white text-gray-800 shadow-md rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex gap-1">
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "0ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "150ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "300ms" }}
                     ></div>
                   </div>
@@ -280,13 +280,13 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSendMessage(inputValue)}
-              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-primary"
               disabled={isLoading}
             />
             <button
               onClick={() => handleSendMessage(inputValue)}
               disabled={isLoading || !inputValue.trim()}
-              className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-primary-glow p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="text-white" size={20} />
             </button>

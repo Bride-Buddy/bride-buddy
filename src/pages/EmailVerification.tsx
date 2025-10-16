@@ -17,7 +17,7 @@ const EmailVerification = () => {
   }, [email, navigate]);
 
   return (
-    <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
+    <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-card via-muted to-background flex flex-col items-center justify-center p-6">
       <div className="flex-1 flex items-center justify-center">
         <img src={logo} alt="Bride Buddy Logo" className="w-80 h-80 drop-shadow-2xl" />
       </div>
@@ -26,7 +26,7 @@ const EmailVerification = () => {
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6 text-center">
           <div className="flex justify-center">
             <div className="relative">
-              <Mail className="w-20 h-20 text-purple-400" />
+              <Mail className="w-20 h-20 text-primary" />
               <Sparkles className="w-8 h-8 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
             </div>
           </div>
@@ -38,7 +38,7 @@ const EmailVerification = () => {
 
             <p className="text-gray-600 text-base">We've sent a magic link to</p>
 
-            <p className="text-purple-500 font-semibold text-lg break-all">{email}</p>
+            <p className="text-primary font-semibold text-lg break-all">{email}</p>
 
             <div className="pt-4 space-y-2">
               <p className="text-gray-700 font-medium">
@@ -61,7 +61,7 @@ const EmailVerification = () => {
 
         <button
           onClick={() => navigate(ROUTES.AUTH)}
-          className="w-full text-sm text-center text-purple-400 font-bold underline hover:text-purple-500 transition-colors"
+          className="w-full text-sm text-center text-primary font-bold underline hover:text-primary-glow transition-colors"
         >
           ← Back to login
         </button>

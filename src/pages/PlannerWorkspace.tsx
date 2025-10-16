@@ -344,9 +344,9 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-4 flex items-center justify-between shadow-md">
+      <div className="bg-gradient-to-r from-primary to-secondary px-4 py-4 flex items-center justify-between shadow-md">
         <button
           onClick={() => navigate(ROUTES.CHAT)}
           className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
@@ -371,11 +371,11 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
           {/* Days Until Wedding */}
           <Card className="p-6 bg-white shadow-lg">
             <div className="flex items-center gap-3 mb-4">
-              <Calendar className="text-purple-400" size={24} />
+              <Calendar className="text-primary" size={24} />
               <h3 className="font-semibold text-gray-700">Wedding Countdown</h3>
             </div>
             <div className="text-center">
-              <p className="text-5xl font-bold text-purple-400">{daysUntilWedding}</p>
+              <p className="text-5xl font-bold text-primary">{daysUntilWedding}</p>
               <p className="text-gray-600">Days Until Your Big Day! 💍</p>
             </div>
           </Card>
@@ -383,11 +383,11 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
           {/* Budget Overview */}
           <Card className="p-6 bg-white shadow-lg">
             <div className="flex items-center gap-3 mb-4">
-              <DollarSign className="text-purple-400" size={24} />
+              <DollarSign className="text-primary" size={24} />
               <h3 className="font-semibold text-gray-700">Budget Status</h3>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-purple-400">${spent.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-primary">${spent.toLocaleString()}</p>
               <p className="text-gray-500 text-sm">of ${totalBudget.toLocaleString()}</p>
               <p className="text-green-600 font-medium mt-1">${(totalBudget - spent).toLocaleString()} remaining</p>
             </div>
@@ -396,7 +396,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
           {/* Timeline Progress */}
           <Card className="p-6 bg-white shadow-lg">
             <div className="flex items-center gap-3 mb-4">
-              <TrendingUp className="text-purple-400" size={24} />
+              <TrendingUp className="text-primary" size={24} />
               <h3 className="font-semibold text-gray-700">Planning Progress</h3>
             </div>
             <div className="space-y-3">
@@ -409,13 +409,13 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
         {/* Today's Focus */}
         <Card className="p-6 bg-white shadow-lg">
           <div className="flex items-center gap-3 mb-6">
-            <ListChecks className="text-purple-400" size={24} />
+            <ListChecks className="text-primary" size={24} />
             <h3 className="text-xl font-semibold text-gray-700">Today's Focus</h3>
           </div>
           <div className="space-y-3">
             {todaysFocus.length > 0 ? (
               todaysFocus.map((task) => (
-                <div key={task.id} className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                <div key={task.id} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => toggleTask(task.id, task.completed)}
@@ -450,7 +450,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
             <Card className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <Users className="text-purple-400" />
+                  <Users className="text-primary" />
                   Vendor Tracker
                 </h3>
                 <Button onClick={() => setShowVendorDialog(true)} size="sm">
