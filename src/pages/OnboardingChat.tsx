@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, LayoutPlannerWorkspace } from "lucide-react";
+import { Send, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/bride-buddy-logo-new.png";
@@ -208,7 +208,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
           className="p-2 hover:bg-white/20 rounded-full transition-all"
           aria-label="View Dashboard"
         >
-          <LayoutPlannerWorkspace className="text-white" size={24} />
+          <LayoutDashboard className="text-white" size={24} />
         </button>
       </div>
 

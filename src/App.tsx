@@ -394,8 +394,6 @@ function App() {
           element={session ? <PlannerWorkspace userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />}
         />
 
-        {/* Legacy routes redirect to planner-workspace */}
-        <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.PLANNER} replace />} />
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to={ROUTES.AUTH} />} />
       </Routes>

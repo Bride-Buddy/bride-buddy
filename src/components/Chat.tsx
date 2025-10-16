@@ -273,7 +273,7 @@ const Chat = ({ userId }: ChatProps) => {
 
   const handleQuickReply = (action: string, view?: "planner") => {
     if (view === "planner") {
-      navigate(ROUTES.PLANNER);
+      navigate(ROUTES.PLANNER_WORKSPACE);
     } else {
       setInput(action);
     }
