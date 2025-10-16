@@ -73,10 +73,18 @@ export const TEST_MODE_CONFIG = {
   // Production Mode
   production: {
     skipEmailVerification: false,
+    requireEmailVerificationFirst: true,
+    showAuthRedirect: true,
+    createUserProfileAfterOnboarding: true,
     landingPage: "auth",
-    trialDurationDays: 7,
+    autoPopulateUserInfo: true,
+    createPlannerWorkspace: true
+    trialDurationMinutes: 1,
+    showPricingModalsAfterTrial: true,
+    autoRedirectToModalAfterTrial: true,
     instantVIPUpgrade: false,
     hasBasicTier: true,
+    allowBothTierSelection: true,
     showStripeCheckout: true,
   },
 };
@@ -111,7 +119,7 @@ export const getTrialEndDate = (startDate: Date): Date => {
     // Test Modes 2 & 3: 1 minute
     endDate.setMinutes(endDate.getMinutes() + config.trialDurationMinutes);
   } else if ("trialDurationDays" in config) {
-    // Production: 7 days
+    // Production: 1 minute
     endDate.setDate(endDate.getDate() + config.trialDurationDays);
   }
 
@@ -139,7 +147,7 @@ export const getDaysRemainingInTrial = (trialStartDate: string): number => {
     // Test Modes 2 & 3: Return minutes remaining
     return Math.max(Math.ceil(diffTime / (1000 * 60)), 0);
   } else {
-    // Production: Return days remaining
+    // Production: Return time remaining
     return Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
   }
 };
