@@ -25,6 +25,3 @@ jobs:
 
       - name: Run tests
         run: npm test
-        git add .github/workflows/test.yml
-git commit -m "add GitHub Actions test workflow"
-git push
