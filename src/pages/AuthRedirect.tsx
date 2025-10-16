@@ -17,7 +17,6 @@ const AuthRedirect = () => {
         } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("Auth redirect error:", error);
           toast.error("Authentication failed");
           navigate(ROUTES.AUTH);
           return;
@@ -32,28 +31,46 @@ const AuthRedirect = () => {
 
         // MODE 1: Skip DB, go straight to onboarding-chat
         if ("skipDatabaseCreation" in config && config.skipDatabaseCreation) {
-          navigate(ROUTES.ONBOARDING_CHAT, { state: { userId: session.user.id, userName: session.user.email } });
+          navigate(ROUTES.ONBOARDING_CHAT, { state: { userId: sessionStorage.getItem("bb_user_name") || session.user.email, userEmail: session.user.email } });
           return;
         }
 
-        // MODE 2 & 3: Check if user has completed onboarding
+        // Get user_id (name) from sessionStorage (set during signup), fallback to empty string
+        let user_id = sessionStorage.getItem("bb_user_name") || "";
+
+        // Always use session.user.email as email
+        let email = session.user.email;
+
+        // If user_id is not set in storage, try to get from profiles table using email
+        if (!user_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("email", email)
+            .single();
+          user_id = profile?.user_id || "";
+        }
+
+        // Find profile by (user_id, email)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name")
-          .eq("user_id", session.user.id)
+          .select("user_id")
+          .eq("user_id", user_id)
+          .eq("email", email)
           .single();
 
-        // Check if user has onboarding data
+        // Check if user has onboarding data (optional, adjust as needed)
         const { data: timelineData } = await supabase
           .from("timeline")
           .select("engagement_date, wedding_date")
-          .eq("user_id", session.user.id)
+          .eq("user_id", user_id)
+          .eq("email", email)
           .single();
 
         // New user (no profile OR no timeline data) → onboarding-chat
         if (!profileData || !timelineData?.engagement_date || !timelineData?.wedding_date) {
           navigate(ROUTES.ONBOARDING_CHAT, {
-            state: { userId: session.user.id, userName: profileData?.full_name || session.user.email },
+            state: { userId: user_id, userEmail: email },
           });
           return;
         }
@@ -61,7 +78,6 @@ const AuthRedirect = () => {
         // Returning user with complete data → Chat
         navigate(ROUTES.CHAT);
       } catch (error) {
-        console.error("Unexpected error:", error);
         navigate(ROUTES.AUTH);
       }
     };
