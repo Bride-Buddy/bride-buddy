@@ -383,16 +383,17 @@ function App() {
         />
 
         {/* Main chat interface */}
-        <Route path={ROUTES.CHAT} element={session ? <Chat userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />} />
-
-        {/* Planner Workspace (unified dashboard + planner) */}
         <Route
-          path={ROUTES.PLANNER}
+          path={ROUTES.CHAT}
+          element={session ? <Chat userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />}
+        />
+
+        {/* Planner Workspace (unified workboard) */}
+        <Route
+          path={ROUTES.PLANNER_WORKSPACE}
           element={session ? <PlannerWorkspace userId={session.user.id} /> : <Navigate to={ROUTES.AUTH} />}
         />
-        
-        {/* Legacy routes redirect to planner */}
-        <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.PLANNER} replace />} />
+
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to={ROUTES.AUTH} />} />
       </Routes>
