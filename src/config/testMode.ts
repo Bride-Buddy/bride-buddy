@@ -108,7 +108,7 @@ export const getTrialEndDate = (startDate: Date): Date => {
     // Test Mode 1: 30 seconds
     endDate.setSeconds(endDate.getSeconds() + config.trialDurationSeconds);
   } else if ("trialDurationMinutes" in config) {
-    // Test Modes 2 & 3: 30 minutes
+    // Test Modes 2 & 3: 1 minute
     endDate.setMinutes(endDate.getMinutes() + config.trialDurationMinutes);
   } else if ("trialDurationDays" in config) {
     // Production: 7 days
