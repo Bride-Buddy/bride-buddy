@@ -1,3 +1,4 @@
+// Only uses text location (no geolocation). Removes geolocation logic and updates location handling.
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +33,7 @@ const Chat = ({ userId }: ChatProps) => {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
   const [showEarlyAdopterOffer, setShowEarlyAdopterOffer] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocationText, setUserLocationText] = useState<string>(""); // text location only
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Chat = ({ userId }: ChatProps) => {
     const fetchUserProfile = async () => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date")
+        .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date, location_text")
         .eq("user_id", userId)
         .single();
 
@@ -49,6 +50,8 @@ const Chat = ({ userId }: ChatProps) => {
         setUserName(profile.full_name || "");
         setTrialStartDate(profile.trial_start_date);
         setSubscriptionTier(profile.subscription_tier || "trial");
+
+        setUserLocationText(profile.location_text || "");
 
         // Check if we need to reset messages_today
         const today = new Date().toISOString().split("T")[0];
@@ -64,19 +67,8 @@ const Chat = ({ userId }: ChatProps) => {
       }
     };
 
-    // In Chat component, after sending/receiving a message
-    const handleChatMessage = async (text: string) => {
-      // ...existing logic
-
-      // Call AI function to extract location
-      const result = await supabase.functions.invoke("extract_location", { body: { text } });
-      if (result.data?.location) {
-        await supabase.from("profiles").update({ location_text: result.data.location }).eq("user_id", userId);
-      }
-    };
     fetchUserProfile();
     createOrGetSession();
-    requestGeolocation();
   }, [userId]);
 
   useEffect(() => {
@@ -162,6 +154,22 @@ const Chat = ({ userId }: ChatProps) => {
     setMessages(typedMessages);
   };
 
+  // Helper: Extract location from message using AI backend and update profile
+  const checkAndUpdateLocationFromMessage = async (userMessage: string) => {
+    // Call AI function to extract location from message
+    const { data: aiResult, error } = await supabase.functions.invoke("extract_location", {
+      body: { text: userMessage },
+    });
+    if (error) {
+      console.error("AI location extraction failed:", error);
+      return;
+    }
+    if (aiResult?.location) {
+      setUserLocationText(aiResult.location);
+      await supabase.from("profiles").update({ location_text: aiResult.location }).eq("user_id", userId);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || !sessionId || loading) return;
 
@@ -188,6 +196,9 @@ const Chat = ({ userId }: ChatProps) => {
 
       if (insertError) throw insertError;
 
+      // Check for location in message and update profile if found
+      await checkAndUpdateLocationFromMessage(userMessage);
+
       // Increment message count for free tier users
       if (subscriptionTier === "free") {
         const newCount = messagesToday + 1;
@@ -201,13 +212,14 @@ const Chat = ({ userId }: ChatProps) => {
         setMessagesToday(newCount);
       }
 
+      // Send message to chat function (pass location text only)
       console.log("📤 Sending message to chat function:", { sessionId, messageLength: userMessage.length });
 
       const { data, error } = await supabase.functions.invoke("chat", {
         body: {
           sessionId,
           message: userMessage,
-          userLocation,
+          location_text: userLocationText,
         },
       });
 
@@ -402,7 +414,7 @@ const Chat = ({ userId }: ChatProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask about venues, themes, budgets, timelines..."
+            placeholder="Ask about venues, themes, budgets, timelines... (e.g. 'We're planning in Miami, FL')"
             className="resize-none"
             rows={2}
             disabled={loading}
