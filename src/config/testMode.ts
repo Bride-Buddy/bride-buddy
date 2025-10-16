@@ -70,7 +70,7 @@ export const TEST_MODE_CONFIG = {
     allowBothTierSelection: true,
   },
 
-  // Production Mode
+   // Production Mode
     skipEmailVerification: false,
     requireEmailVerificationFirst: true,
     showAuthRedirect: true,
