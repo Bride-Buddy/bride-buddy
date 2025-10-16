@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/bride-buddy-logo-ring.png";
@@ -14,8 +14,9 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [locationText, setLocationText] = useState("");
 
-  // --- Check for existing session on mount (like Gmail/Facebook) ---
+  // --- Check for existing session on mount ---
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -24,11 +25,10 @@ const Auth = () => {
         } = await supabase.auth.getSession();
 
         if (session) {
-          // User is already logged in - redirect them automatically
+          // User is already logged in - redirect automatically
           console.log("Active session found, redirecting...");
           navigate(ROUTES.AUTH_REDIRECT);
         } else {
-          // No active session - show auth form
           setCheckingSession(false);
         }
       } catch (error) {
@@ -60,12 +60,10 @@ const Auth = () => {
       toast.error("Please enter your email");
       return;
     }
-
     if (!isLogin && !name.trim()) {
       toast.error("Please enter your name");
       return;
     }
-
     const config = getCurrentModeConfig();
 
     // Test Mode 1 & 2: Skip email verification completely
@@ -84,7 +82,7 @@ const Auth = () => {
           email,
           password: "testmode123",
           options: {
-            data: name ? { full_name: name } : undefined,
+            data: name ? { full_name: name, location_text: locationText } : undefined,
           },
         });
 
@@ -95,14 +93,11 @@ const Auth = () => {
         }
 
         toast.success("Account created! Redirecting...");
-        // Session is automatically created and stored by Supabase
       } else {
         toast.success("Welcome back! Redirecting...");
-        // Session is automatically created and stored by Supabase
       }
 
       setLoading(false);
-      // Auth state change listener will handle redirect
       return;
     }
 
@@ -116,6 +111,7 @@ const Auth = () => {
         data: name
           ? {
               full_name: name,
+              location_text: locationText,
             }
           : undefined,
       },
@@ -139,6 +135,25 @@ const Auth = () => {
     }
   };
 
+  // --- Handle sending OTP via Supabase Edge Function ---
+  const handleSendEmailOtp = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("send-email-otp", {
+      body: { email },
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("OTP email sent! Check your inbox.");
+    }
+  };
+
   const config = getCurrentModeConfig();
 
   // Show loading screen while checking for existing session
@@ -153,7 +168,6 @@ const Auth = () => {
 
   return (
     <div className="w-full h-screen max-w-md mx-auto bg-gradient-to-b from-blue-100 via-purple-100 to-pink-100 flex flex-col items-center justify-center p-6">
-      {/* Test Mode Indicator */}
       {showTestModeIndicator && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded-lg shadow-lg font-bold text-sm z-50">
           🧪 TEST MODE
@@ -192,19 +206,34 @@ const Auth = () => {
 
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">
-                Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
-                disabled={loading}
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Wedding Location <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="City, State or City, Country"
+                  value={locationText}
+                  onChange={(e) => setLocationText(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-300 text-gray-700"
+                  disabled={loading}
+                />
+              </div>
+            </>
           )}
 
           <div>
@@ -230,6 +259,15 @@ const Auth = () => {
           >
             {loading ? <Sparkles className="animate-spin" size={20} /> : <Send size={20} />}
             {loading ? "Sending magic link..." : isLogin ? "Send Sign In Link" : "Start Free Trial"}
+          </button>
+
+          <button
+            onClick={handleSendEmailOtp}
+            disabled={loading || !email}
+            className="w-full mt-2 bg-gradient-to-r from-purple-400 to-blue-400 text-white py-3 rounded-xl shadow hover:shadow-lg transition-all duration-200 text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? <Sparkles className="animate-spin" size={18} /> : <Mail size={18} />}
+            {loading ? "Sending OTP..." : "Send OTP Email"}
           </button>
 
           <div className="text-center text-xs text-gray-500 pt-2">
