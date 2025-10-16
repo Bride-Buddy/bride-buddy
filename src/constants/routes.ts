@@ -9,7 +9,7 @@ export const ROUTES = {
   AUTH: "/auth",
   ONBOARDING_CHAT: "/onboarding-chat",
   CHAT: "/chat",
-  PLANNER_WORKSPACE: "/planner-wrokspace",
+  PLANNER_WORKSPACE: "/planner-workspace",
   EMAIL_VERIFICATION: "/email-verification",
   AUTH_REDIRECT: "/auth-redirect",
 } as const;

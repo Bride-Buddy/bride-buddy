@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, LayoutDashboard } from "lucide-react";
+import { Send, LayoutPlannerWorkspace } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/bride-buddy-logo-new.png";
@@ -36,8 +36,11 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
   useEffect(() => {
     const initSession = async () => {
       // Verify we have a valid session before initializing
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
         console.error("No valid session found:", sessionError);
         toast.error("Please log in to continue");
@@ -55,7 +58,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       if (error) {
         console.error("Error creating chat session:", error);
         toast.error("Failed to start onboarding. Please try again.");
-        
+
         // If it's an auth error, redirect to login
         if (error.message?.includes("JWT") || error.message?.includes("authentication")) {
           navigate(ROUTES.AUTH);
@@ -83,8 +86,11 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
     if (!text.trim() || !sessionId) return;
 
     // Check for valid session before proceeding
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
     if (sessionError || !session) {
       console.error("Session error:", sessionError);
       toast.error("Your session has expired. Please log in again.");
@@ -130,7 +136,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Chat function error:", errorData);
-        
+
         // Handle specific error cases
         if (response.status === 401) {
           toast.error("Your session has expired. Please log in again.");
@@ -144,7 +150,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
           toast.error("Daily message limit reached. Upgrade to VIP for unlimited messages! 💙");
           return;
         }
-        
+
         throw new Error(errorData.error || "Failed to get response from Bride Buddy");
       }
 
@@ -175,8 +181,8 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         // Check if onboarding is complete
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
-            toast.success("Your personalized dashboard is ready! 💙");
-            navigate(ROUTES.DASHBOARD);
+            toast.success("Your personalized planner is ready! 💙");
+            navigate(ROUTES.PLANNER_WORKSPACE);
           }, 1500);
         }
       }
@@ -200,9 +206,9 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         <button
           onClick={() => navigate(ROUTES.CHAT)}
           className="p-2 hover:bg-white/20 rounded-full transition-all"
-          aria-label="Go to Dashboard"
+          aria-label="View Dashboard"
         >
-          <LayoutDashboard className="text-white" size={24} />
+          <LayoutPlannerWorkspace className="text-white" size={24} />
         </button>
       </div>
 

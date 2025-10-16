@@ -11,9 +11,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Calendar, DollarSign, TrendingUp, ListChecks, Users, 
-  ArrowLeft, Plus, Trash2, Edit2, Check, X 
+import {
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  ListChecks,
+  Users,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { format } from "date-fns";
@@ -48,12 +57,12 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   const [timeline, setTimeline] = useState<any>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  
+
   // Dialog states
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
-  
+
   // Form states
   const [vendorForm, setVendorForm] = useState({ name: "", service: "", amount: "", due_date: "", notes: "" });
   const [taskForm, setTaskForm] = useState({ task_name: "", emoji: "", due_date: "" });
@@ -65,13 +74,13 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch all data in parallel
       const [profileRes, timelineRes, checklistRes, vendorsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).single(),
         supabase.from("timeline").select("*").eq("user_id", userId).single(),
         supabase.from("checklist").select("*").eq("user_id", userId).order("due_date", { ascending: true }),
-        supabase.from("vendors").select("*").eq("user_id", userId).order("due_date", { ascending: true })
+        supabase.from("vendors").select("*").eq("user_id", userId).order("due_date", { ascending: true }),
       ]);
 
       setProfile(profileRes.data);
@@ -126,7 +135,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
       amount: vendorForm.amount ? Number(vendorForm.amount) : null,
       due_date: vendorForm.due_date || null,
       notes: vendorForm.notes || null,
-      paid: false
+      paid: false,
     });
 
     if (error) {
@@ -141,7 +150,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
 
   const toggleVendorPaid = async (vendorId: string, currentPaid: boolean) => {
     const { error } = await supabase.from("vendors").update({ paid: !currentPaid }).eq("id", vendorId);
-    
+
     if (error) {
       toast({ title: "Error", description: "Failed to update payment status", variant: "destructive" });
     } else {
@@ -151,7 +160,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
 
   const deleteVendor = async (vendorId: string) => {
     const { error } = await supabase.from("vendors").delete().eq("id", vendorId);
-    
+
     if (error) {
       toast({ title: "Error", description: "Failed to delete vendor", variant: "destructive" });
     } else {
@@ -172,7 +181,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
       task_name: taskForm.task_name,
       emoji: taskForm.emoji || null,
       due_date: taskForm.due_date || null,
-      completed: false
+      completed: false,
     });
 
     if (error) {
@@ -187,7 +196,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
 
   const toggleTask = async (taskId: string, currentCompleted: boolean) => {
     const { error } = await supabase.from("checklist").update({ completed: !currentCompleted }).eq("id", taskId);
-    
+
     if (error) {
       toast({ title: "Error", description: "Failed to update task", variant: "destructive" });
     } else {
@@ -197,7 +206,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
 
   const deleteTask = async (taskId: string) => {
     const { error } = await supabase.from("checklist").delete().eq("id", taskId);
-    
+
     if (error) {
       toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
     } else {
@@ -214,13 +223,16 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   }
 
   // Categorize spending
-  const categorySpending = vendors.reduce((acc, v) => {
-    const category = v.service;
-    if (!acc[category]) acc[category] = { total: 0, paid: 0 };
-    acc[category].total += Number(v.amount) || 0;
-    if (v.paid) acc[category].paid += Number(v.amount) || 0;
-    return acc;
-  }, {} as Record<string, { total: number; paid: number }>);
+  const categorySpending = vendors.reduce(
+    (acc, v) => {
+      const category = v.service;
+      if (!acc[category]) acc[category] = { total: 0, paid: 0 };
+      acc[category].total += Number(v.amount) || 0;
+      if (v.paid) acc[category].paid += Number(v.amount) || 0;
+      return acc;
+    },
+    {} as Record<string, { total: number; paid: number }>,
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
@@ -245,7 +257,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Dashboard Widgets */}
+        {/* Planner Workspace Widgets */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Days Until Wedding */}
           <Card className="p-6 bg-white shadow-lg">
@@ -295,13 +307,15 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
             {todaysFocus.length > 0 ? (
               todaysFocus.map((task) => (
                 <div key={task.id} className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                  <Checkbox 
+                  <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => toggleTask(task.id, task.completed)}
                     className="mt-0.5"
                   />
                   <div className="flex-1">
-                    <p className="font-medium text-gray-800">{task.emoji} {task.task_name}</p>
+                    <p className="font-medium text-gray-800">
+                      {task.emoji} {task.task_name}
+                    </p>
                     {task.due_date && (
                       <p className="text-sm text-gray-500 mt-1">Due: {new Date(task.due_date).toLocaleDateString()}</p>
                     )}
@@ -334,7 +348,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
                   <Plus className="mr-2 h-4 w-4" /> Add Vendor
                 </Button>
               </div>
-              
+
               {vendors.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 mb-4">No vendors added yet</p>
@@ -349,38 +363,32 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
                           <h4 className="font-semibold text-lg">{vendor.name}</h4>
                           <p className="text-sm text-gray-600">{vendor.service}</p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          vendor.paid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                        }`}>
-                          {vendor.paid ? '✓ Paid' : 'Unpaid'}
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            vendor.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                          }`}
+                        >
+                          {vendor.paid ? "✓ Paid" : "Unpaid"}
                         </span>
                       </div>
-                      
+
                       <div className="flex justify-between items-center mt-3 text-sm">
                         <span className="font-medium">${vendor.amount?.toLocaleString() || 0}</span>
                         {vendor.due_date && (
-                          <span className="text-gray-500">Due: {format(new Date(vendor.due_date), 'MMM dd, yyyy')}</span>
+                          <span className="text-gray-500">
+                            Due: {format(new Date(vendor.due_date), "MMM dd, yyyy")}
+                          </span>
                         )}
                       </div>
-                      
-                      {vendor.notes && (
-                        <p className="text-sm text-gray-600 mt-2 italic">{vendor.notes}</p>
-                      )}
-                      
+
+                      {vendor.notes && <p className="text-sm text-gray-600 mt-2 italic">{vendor.notes}</p>}
+
                       <div className="flex gap-2 mt-3">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => toggleVendorPaid(vendor.id, vendor.paid)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => toggleVendorPaid(vendor.id, vendor.paid)}>
                           {vendor.paid ? <X className="h-4 w-4 mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-                          {vendor.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                          {vendor.paid ? "Mark Unpaid" : "Mark Paid"}
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => deleteVendor(vendor.id)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => deleteVendor(vendor.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -398,7 +406,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
                 <DollarSign className="text-purple-400" />
                 Finance Tracker
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-purple-50 p-4 rounded-lg text-center">
                   <p className="text-sm text-gray-600">Total Budget</p>
@@ -454,7 +462,7 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
                   <Plus className="mr-2 h-4 w-4" /> Add Task
                 </Button>
               </div>
-              
+
               {checklist.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 mb-4">No tasks added yet</p>
@@ -463,35 +471,31 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
               ) : (
                 <>
                   <div className="mb-4 text-sm text-gray-600">
-                    {checklist.filter(t => t.completed).length} of {checklist.length} tasks completed
+                    {checklist.filter((t) => t.completed).length} of {checklist.length} tasks completed
                   </div>
                   <div className="space-y-2">
                     {checklist.map((task) => (
-                      <div 
-                        key={task.id} 
+                      <div
+                        key={task.id}
                         className={`flex items-center gap-3 p-3 rounded-lg border ${
-                          task.completed ? 'bg-gray-50' : 'bg-white'
+                          task.completed ? "bg-gray-50" : "bg-white"
                         }`}
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={task.completed}
                           onCheckedChange={() => toggleTask(task.id, task.completed)}
                         />
                         <div className="flex-1">
-                          <p className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
+                          <p className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`}>
                             {task.emoji} {task.task_name}
                           </p>
                           {task.due_date && (
                             <p className="text-sm text-gray-500">
-                              Due: {format(new Date(task.due_date), 'MMM dd, yyyy')}
+                              Due: {format(new Date(task.due_date), "MMM dd, yyyy")}
                             </p>
                           )}
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => deleteTask(task.id)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => deleteTask(task.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -513,51 +517,53 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="vendor-name">Vendor Name *</Label>
-              <Input 
+              <Input
                 id="vendor-name"
                 value={vendorForm.name}
-                onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})}
+                onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
                 placeholder="e.g., Sarah's Photography"
               />
             </div>
             <div>
               <Label htmlFor="vendor-service">Service *</Label>
-              <Input 
+              <Input
                 id="vendor-service"
                 value={vendorForm.service}
-                onChange={(e) => setVendorForm({...vendorForm, service: e.target.value})}
+                onChange={(e) => setVendorForm({ ...vendorForm, service: e.target.value })}
                 placeholder="e.g., Photography"
               />
             </div>
             <div>
               <Label htmlFor="vendor-amount">Amount</Label>
-              <Input 
+              <Input
                 id="vendor-amount"
                 type="number"
                 value={vendorForm.amount}
-                onChange={(e) => setVendorForm({...vendorForm, amount: e.target.value})}
+                onChange={(e) => setVendorForm({ ...vendorForm, amount: e.target.value })}
                 placeholder="0"
               />
             </div>
             <div>
               <Label htmlFor="vendor-due">Due Date</Label>
-              <Input 
+              <Input
                 id="vendor-due"
                 type="date"
                 value={vendorForm.due_date}
-                onChange={(e) => setVendorForm({...vendorForm, due_date: e.target.value})}
+                onChange={(e) => setVendorForm({ ...vendorForm, due_date: e.target.value })}
               />
             </div>
             <div>
               <Label htmlFor="vendor-notes">Notes</Label>
-              <Textarea 
+              <Textarea
                 id="vendor-notes"
                 value={vendorForm.notes}
-                onChange={(e) => setVendorForm({...vendorForm, notes: e.target.value})}
+                onChange={(e) => setVendorForm({ ...vendorForm, notes: e.target.value })}
                 placeholder="Additional notes..."
               />
             </div>
-            <Button onClick={addVendor} className="w-full">Add Vendor</Button>
+            <Button onClick={addVendor} className="w-full">
+              Add Vendor
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -571,33 +577,35 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="task-name">Task Name *</Label>
-              <Input 
+              <Input
                 id="task-name"
                 value={taskForm.task_name}
-                onChange={(e) => setTaskForm({...taskForm, task_name: e.target.value})}
+                onChange={(e) => setTaskForm({ ...taskForm, task_name: e.target.value })}
                 placeholder="e.g., Book venue"
               />
             </div>
             <div>
               <Label htmlFor="task-emoji">Emoji</Label>
-              <Input 
+              <Input
                 id="task-emoji"
                 value={taskForm.emoji}
-                onChange={(e) => setTaskForm({...taskForm, emoji: e.target.value})}
+                onChange={(e) => setTaskForm({ ...taskForm, emoji: e.target.value })}
                 placeholder="💍"
                 maxLength={2}
               />
             </div>
             <div>
               <Label htmlFor="task-due">Due Date</Label>
-              <Input 
+              <Input
                 id="task-due"
                 type="date"
                 value={taskForm.due_date}
-                onChange={(e) => setTaskForm({...taskForm, due_date: e.target.value})}
+                onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
               />
             </div>
-            <Button onClick={addTask} className="w-full">Add Task</Button>
+            <Button onClick={addTask} className="w-full">
+              Add Task
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

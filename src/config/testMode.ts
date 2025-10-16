@@ -39,7 +39,7 @@ export const TEST_MODE_CONFIG = {
     redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
     trialDurationMinutes: 5, // CHANGED: 5 minutes (not 30)
     autoRedirectToModalAfterTrial: true, // NEW: Auto-redirect to Modal when trial expires
-    redirectToDashboard: true, // Dashboard.tsx
+    redirectToPlannerWorkspace: true, // PlannerWorkspace.tsx
     showPricingModalsAfterTrial: true, // Modal.tsx appears after 5 min trial
     instantVIPUpgrade: false,
     hasBasicTier: true,
@@ -61,8 +61,8 @@ export const TEST_MODE_CONFIG = {
     createUserProfileAfterOnboarding: true, // NEW: Create DB profile after onboarding
     trialDurationMinutes: 5, // 5 minute free trial
     autoRedirectToModalAfterTrial: true, // Auto-redirect to Modal when trial expires
-    redirectToDashboard: true, // MATCHED: Dashboard.tsx
-    autoPopulateUserInfo: true, // NEW: Auto-populate user data in dashboard
+    redirectToPlannerWorkspace: true, // MATCHED: PlannerWorkspace.tsx
+    autoPopulateUserInfo: true, // NEW: Auto-populate user data in planner-workspace
     showPricingModalsAfterTrial: true, // Modal.tsx after 5 min
     instantVIPUpgrade: false,
     hasBasicTier: true,
