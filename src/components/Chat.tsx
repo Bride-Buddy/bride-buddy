@@ -1,3 +1,4 @@
+// Only uses text location (no geolocation). Removes geolocation logic and updates location handling.
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DashboardView from "./DashboardView";
 import { ROUTES } from "@/constants/routes";
 
 import { PersonalizedWelcome } from "./PersonalizedWelcome";
@@ -29,30 +29,33 @@ const Chat = ({ userId }: ChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [dashboardView, setDashboardView] = useState<
-    "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | null
-  >(null);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("trial");
   const [messagesToday, setMessagesToday] = useState(0);
   const [showEarlyAdopterOffer, setShowEarlyAdopterOffer] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocationText, setUserLocationText] = useState<string>(""); // text location only
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
-        .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date")
+        .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date, location_text")
         .eq("user_id", userId)
         .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
+      }
 
       if (profile) {
         setUserName(profile.full_name || "");
         setTrialStartDate(profile.trial_start_date);
         setSubscriptionTier(profile.subscription_tier || "trial");
+        setUserLocationText(profile.location_text || "");
 
         // Check if we need to reset messages_today
         const today = new Date().toISOString().split("T")[0];
@@ -68,25 +71,8 @@ const Chat = ({ userId }: ChatProps) => {
       }
     };
 
-    const requestGeolocation = () => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.log("Geolocation not available:", error);
-          },
-        );
-      }
-    };
-
     fetchUserProfile();
     createOrGetSession();
-    requestGeolocation();
   }, [userId]);
 
   useEffect(() => {
@@ -172,6 +158,22 @@ const Chat = ({ userId }: ChatProps) => {
     setMessages(typedMessages);
   };
 
+  // Helper: Extract location from message using AI backend and update profile
+  const checkAndUpdateLocationFromMessage = async (userMessage: string) => {
+    // Call AI function to extract location from message
+    const { data: aiResult, error } = await supabase.functions.invoke("extract_location", {
+      body: { text: userMessage },
+    });
+    if (error) {
+      console.error("AI location extraction failed:", error);
+      return;
+    }
+    if (aiResult?.location) {
+      setUserLocationText(aiResult.location);
+      await supabase.from("profiles").update({ location_text: aiResult.location }).eq("user_id", userId);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || !sessionId || loading) return;
 
@@ -198,6 +200,9 @@ const Chat = ({ userId }: ChatProps) => {
 
       if (insertError) throw insertError;
 
+      // Check for location in message and update profile if found
+      await checkAndUpdateLocationFromMessage(userMessage);
+
       // Increment message count for free tier users
       if (subscriptionTier === "free") {
         const newCount = messagesToday + 1;
@@ -211,13 +216,14 @@ const Chat = ({ userId }: ChatProps) => {
         setMessagesToday(newCount);
       }
 
+      // Send message to chat function (pass location text only)
       console.log("📤 Sending message to chat function:", { sessionId, messageLength: userMessage.length });
 
       const { data, error } = await supabase.functions.invoke("chat", {
         body: {
           sessionId,
           message: userMessage,
-          userLocation,
+          location_text: userLocationText,
         },
       });
 
@@ -265,14 +271,9 @@ const Chat = ({ userId }: ChatProps) => {
     }
   };
 
-  const handleQuickReply = (
-    action: string,
-    view?: "overview" | "todo" | "finance" | "vendors" | "timeline" | "checklist" | "dashboard",
-  ) => {
-    if (view === "dashboard") {
-      navigate(ROUTES.DASHBOARD);
-    } else if (view) {
-      setDashboardView(view);
+  const handleQuickReply = (action: string, view?: "planner") => {
+    if (view === "planner") {
+      navigate(ROUTES.PLANNER_WORKSPACE);
     } else {
       setInput(action);
     }
@@ -288,7 +289,6 @@ const Chat = ({ userId }: ChatProps) => {
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
       <PersonalizedWelcome userId={userId} />
-      <DashboardView userId={userId} view={dashboardView} onViewChange={setDashboardView} />
 
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {messages.length === 0 ? (
@@ -302,53 +302,32 @@ const Chat = ({ userId }: ChatProps) => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard", "dashboard")}
+                    onClick={() => handleQuickReply("Show me my planner", "planner")}
                     variant="default"
                     className="hover:bg-primary/90"
                   >
-                    🌸 View Dashboard
+                    🌸 View Planner
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show me my dashboard", "overview")}
+                    onClick={() => handleQuickReply("What are my upcoming tasks?")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    Quick Overview
+                    📋 My Tasks
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("Show my full checklist", "checklist")}
+                    onClick={() => handleQuickReply("Show my budget status")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    Full Checklist
+                    💰 Budget
                   </Button>
                   <Button
-                    onClick={() => handleQuickReply("What are my tasks for today?", "todo")}
+                    onClick={() => handleQuickReply("What vendors do I have?")}
                     variant="outline"
                     className="hover:bg-primary/10"
                   >
-                    To-Do Today
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my finance tracker", "finance")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Finance Tracker
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my vendor tracker", "vendors")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Vendor Tracker
-                  </Button>
-                  <Button
-                    onClick={() => handleQuickReply("Show my wedding timeline", "timeline")}
-                    variant="outline"
-                    className="hover:bg-primary/10"
-                  >
-                    Wedding Timeline
+                    👥 Vendors
                   </Button>
                 </div>
               </>
@@ -439,7 +418,7 @@ const Chat = ({ userId }: ChatProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask about venues, themes, budgets, timelines..."
+            placeholder="Ask about venues, themes, budgets, timelines... (e.g. 'We're planning in Miami, FL')"
             className="resize-none"
             rows={2}
             disabled={loading}

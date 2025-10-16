@@ -156,6 +156,7 @@ export type Database = {
           full_name: string | null
           id: string
           last_message_date: string | null
+          location_text: string | null
           messages_today: number | null
           partner_email: string | null
           partner_name: string | null
@@ -174,6 +175,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_message_date?: string | null
+          location_text?: string | null
           messages_today?: number | null
           partner_email?: string | null
           partner_name?: string | null
@@ -192,6 +194,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_message_date?: string | null
+          location_text?: string | null
           messages_today?: number | null
           partner_email?: string | null
           partner_name?: string | null

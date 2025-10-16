@@ -28,19 +28,18 @@ export const TEST_MODE_CONFIG = {
   },
 
   mode2: {
-    skipEmailVerification: false, // Show mock email verification
-    useMockEmailVerification: true, // Mock/instant verification
+    skipEmailVerification: true, // Show mock email verification
     skipDatabaseCreation: true, // No real profile (always new user)
     alwaysNewUser: true, // Always treat as new user
-    landingPage: "auth",
+    landingPage: "onboarding-chat",
     showAuthRedirect: true, // MATCHED: AuthRedirect.tsx
-    autoRedirectToOnboarding: false, // Don't skip verification steps
-    requireEmailVerificationFirst: true, // Force email verification flow
+    autoRedirectToOnboarding: true,
+    requireEmailVerificationFirst: false,
     redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
-    trialDurationMinutes: 5, // CHANGED: 5 minutes (not 30)
+    trialDurationMinutes: 1, // CHANGED: 1 minutes (not 5)
     autoRedirectToModalAfterTrial: true, // NEW: Auto-redirect to Modal when trial expires
-    redirectToDashboard: true, // Dashboard.tsx
-    showPricingModalsAfterTrial: true, // Modal.tsx appears after 5 min trial
+    redirectToPlannerWorkspace: true, // PlannerWorkspace.tsx
+    showPricingModalsAfterTrial: true, // Modal.tsx appears after 1 min trial
     instantVIPUpgrade: false,
     hasBasicTier: true,
     showStripeCheckout: true, // Stripe for VIP
@@ -71,13 +70,21 @@ export const TEST_MODE_CONFIG = {
     allowBothTierSelection: true,
   },
 
-  // Production Mode
   production: {
+    // Production Mode
     skipEmailVerification: false,
+    requireEmailVerificationFirst: true,
+    showAuthRedirect: true,
+    createUserProfileAfterOnboarding: true,
     landingPage: "auth",
+    autoPopulateUserInfo: true,
+    createPlannerWorkspace: true,
     trialDurationDays: 7,
+    showPricingModalsAfterTrial: true,
+    autoRedirectToModalAfterTrial: true,
     instantVIPUpgrade: false,
     hasBasicTier: true,
+    allowBothTierSelection: true,
     showStripeCheckout: true,
   },
 };
@@ -109,7 +116,7 @@ export const getTrialEndDate = (startDate: Date): Date => {
     // Test Mode 1: 30 seconds
     endDate.setSeconds(endDate.getSeconds() + config.trialDurationSeconds);
   } else if ("trialDurationMinutes" in config) {
-    // Test Modes 2 & 3: 30 minutes
+    // Test Modes 2 & 3: 1 minute
     endDate.setMinutes(endDate.getMinutes() + config.trialDurationMinutes);
   } else if ("trialDurationDays" in config) {
     // Production: 7 days

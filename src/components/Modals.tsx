@@ -32,7 +32,7 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
   const config = getCurrentModeConfig();
   const unitLabel = getTrialUnitLabel();
   const isTestMode1 = "trialDurationSeconds" in config;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
@@ -44,7 +44,8 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
           <p className="text-gray-600">
             Your trial ends in{" "}
             <span className="font-bold text-purple-400">
-              {daysRemaining} {unitLabel}{daysRemaining !== 1 ? "s" : ""}
+              {daysRemaining} {unitLabel}
+              {daysRemaining !== 1 ? "s" : ""}
             </span>
           </p>
         </div>
@@ -52,8 +53,8 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
         <div className={`bg-gradient-to-r ${getUrgencyColor()} rounded-xl p-4 mb-6`}>
           <p className="text-sm text-gray-700 text-center">
             <span className="font-semibold">
-              {daysRemaining <= 1 
-                ? "Don't lose your data! Upgrade now to save everything!" 
+              {daysRemaining <= 1
+                ? "Don't lose your data! Upgrade now to save everything!"
                 : "Upgrade now to keep the progress going!"}
             </span>
           </p>
@@ -74,7 +75,7 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
                 <div className="text-lg mb-1">
                   {isTestMode1 ? "Get Instant VIP Access" : "Upgrade to Bride Buddy VIP"}
                 </div>
-                <div className="text-sm font-normal opacity-90">Unlimited chat • Dashboard • Finance tracker</div>
+                <div className="text-sm font-normal opacity-90">Unlimited chat • Live Dashboard • Finance tracker</div>
               </div>
               <div className="text-xl">💎</div>
             </div>
@@ -104,10 +105,9 @@ export const TrialExpirationModal: React.FC<TrialExpirationModalProps> = ({
         </button>
 
         <p className="text-xs text-gray-400 text-center mt-4">
-          {isTestMode1 
+          {isTestMode1
             ? `Trial expires at ${trialEndDate}`
-            : `Your account will downgrade automatically on ${trialEndDate} at 00:00`
-          }
+            : `Your account will downgrade automatically on ${trialEndDate} at 00:00`}
         </p>
       </div>
     </div>
@@ -200,7 +200,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({
         </div>
 
         <p className="text-xs text-gray-400 text-center mt-6">
-          All plans include: Unlimited chat • Dashboard • Budget tracker • Timeline • Task manager
+          Both Bride Buddy VIP plans include: Unlimited chat • Live Dashboard • Budget tracker • Timeline • Task manager
         </p>
       </div>
     </div>

@@ -36,8 +36,11 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
   useEffect(() => {
     const initSession = async () => {
       // Verify we have a valid session before initializing
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
         console.error("No valid session found:", sessionError);
         toast.error("Please log in to continue");
@@ -55,7 +58,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       if (error) {
         console.error("Error creating chat session:", error);
         toast.error("Failed to start onboarding. Please try again.");
-        
+
         // If it's an auth error, redirect to login
         if (error.message?.includes("JWT") || error.message?.includes("authentication")) {
           navigate(ROUTES.AUTH);
@@ -83,8 +86,11 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
     if (!text.trim() || !sessionId) return;
 
     // Check for valid session before proceeding
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
     if (sessionError || !session) {
       console.error("Session error:", sessionError);
       toast.error("Your session has expired. Please log in again.");
@@ -130,7 +136,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Chat function error:", errorData);
-        
+
         // Handle specific error cases
         if (response.status === 401) {
           toast.error("Your session has expired. Please log in again.");
@@ -144,7 +150,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
           toast.error("Daily message limit reached. Upgrade to VIP for unlimited messages! 💙");
           return;
         }
-        
+
         throw new Error(errorData.error || "Failed to get response from Bride Buddy");
       }
 
@@ -175,8 +181,8 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
         // Check if onboarding is complete
         if (botMessage.content.includes("ONBOARDING_COMPLETE")) {
           setTimeout(() => {
-            toast.success("Your personalized dashboard is ready! 💙");
-            navigate(ROUTES.DASHBOARD);
+            toast.success("Your personalized planner is ready! 💙");
+            navigate(ROUTES.PLANNER_WORKSPACE);
           }, 1500);
         }
       }
@@ -193,14 +199,14 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
 
   return (
     <div className="w-full h-screen max-w-md mx-auto bg-white shadow-2xl flex flex-col">
-      <div className="bg-gradient-to-r from-purple-300 to-blue-300 px-4 py-3 flex items-center justify-between shadow-md">
+      <div className="bg-gradient-to-r from-primary to-secondary px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Bride Buddy" className="w-20 h-20 object-contain" />
         </div>
         <button
           onClick={() => navigate(ROUTES.CHAT)}
           className="p-2 hover:bg-white/20 rounded-full transition-all"
-          aria-label="Go to Dashboard"
+          aria-label="View Dashboard"
         >
           <LayoutDashboard className="text-white" size={24} />
         </button>
@@ -219,7 +225,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
             <div className="w-full max-w-sm">
               <button
                 onClick={handleStartOnboarding}
-                className="w-full bg-gradient-to-r from-purple-400 to-blue-400 text-white py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
               >
                 Let's get this party planning started! 🎉
               </button>
@@ -232,7 +238,7 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                     msg.type === "user"
-                      ? "bg-purple-300 text-white rounded-br-sm"
+                      ? "bg-primary text-white rounded-br-sm"
                       : "bg-white text-gray-800 shadow-md rounded-bl-sm"
                   }`}
                 >
@@ -245,15 +251,15 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
                 <div className="bg-white text-gray-800 shadow-md rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex gap-1">
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "0ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "150ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
                       style={{ animationDelay: "300ms" }}
                     ></div>
                   </div>
@@ -274,13 +280,13 @@ const OnboardingChat: React.FC<OnboardingChatProps> = ({ userId: propUserId, use
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSendMessage(inputValue)}
-              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-purple-300"
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-primary"
               disabled={isLoading}
             />
             <button
               onClick={() => handleSendMessage(inputValue)}
               disabled={isLoading || !inputValue.trim()}
-              className="bg-purple-300 hover:bg-purple-400 p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-primary-glow p-3 rounded-full transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="text-white" size={20} />
             </button>
