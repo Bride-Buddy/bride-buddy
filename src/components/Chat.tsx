@@ -40,17 +40,21 @@ const Chat = ({ userId }: ChatProps) => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("full_name, trial_start_date, subscription_tier, messages_today, last_message_date, location_text")
         .eq("user_id", userId)
         .single();
 
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
       if (profile) {
         setUserName(profile.full_name || "");
         setTrialStartDate(profile.trial_start_date);
         setSubscriptionTier(profile.subscription_tier || "trial");
-
         setUserLocationText(profile.location_text || "");
 
         // Check if we need to reset messages_today
