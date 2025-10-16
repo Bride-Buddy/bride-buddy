@@ -7,6 +7,7 @@ const supabaseKey = Deno.env.get("PRIVATE_SUPABASE_SERVICE_ROLE_KEY")!;
 const claudeApiKey = Deno.env.get("CLAUDE_API_KEY")!;
 const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 const stripeApiKey = Deno.env.get("STRIPE_SECRET_KEY")!;
+const supabaseServiceKey = Deno.env.get("PRIVATE_SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
