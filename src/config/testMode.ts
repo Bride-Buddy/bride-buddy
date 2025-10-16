@@ -33,8 +33,8 @@ export const TEST_MODE_CONFIG = {
     alwaysNewUser: true, // Always treat as new user
     landingPage: "onboarding-chat",
     showAuthRedirect: true, // MATCHED: AuthRedirect.tsx
-    autoRedirectToOnboarding: true
-    requireEmailVerificationFirst: false
+    autoRedirectToOnboarding: true,
+    requireEmailVerificationFirst: false,
     redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
     trialDurationMinutes: 1, // CHANGED: 1 minutes (not 5)
     autoRedirectToModalAfterTrial: true, // NEW: Auto-redirect to Modal when trial expires
