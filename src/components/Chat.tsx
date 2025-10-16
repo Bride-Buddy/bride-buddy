@@ -64,22 +64,16 @@ const Chat = ({ userId }: ChatProps) => {
       }
     };
 
-    const requestGeolocation = () => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.log("Geolocation not available:", error);
-          },
-        );
+    // In Chat component, after sending/receiving a message
+    const handleChatMessage = async (text: string) => {
+      // ...existing logic
+
+      // Call AI function to extract location
+      const result = await supabase.functions.invoke("extract_location", { body: { text } });
+      if (result.data?.location) {
+        await supabase.from("profiles").update({ location_text: result.data.location }).eq("user_id", userId);
       }
     };
-
     fetchUserProfile();
     createOrGetSession();
     requestGeolocation();
