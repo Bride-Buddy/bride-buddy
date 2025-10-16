@@ -52,7 +52,16 @@ interface ChecklistItem {
 const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Main loading state for initial page load
   const [loading, setLoading] = useState(true);
+  
+  // Per-tab loading states for better UX when switching tabs with large datasets
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [checklistLoading, setChecklistLoading] = useState(false);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  
+  // Data states
   const [profile, setProfile] = useState<any>(null);
   const [timeline, setTimeline] = useState<any>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -67,15 +76,22 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
   const [vendorForm, setVendorForm] = useState({ name: "", service: "", amount: "", due_date: "", notes: "" });
   const [taskForm, setTaskForm] = useState({ task_name: "", emoji: "", due_date: "" });
 
+  // Load all data on component mount
   useEffect(() => {
     loadAllData();
   }, [userId]);
 
+  /**
+   * Loads all planner data from Supabase in parallel
+   * This includes: profile, timeline, checklist items, and vendors
+   * @returns Promise<void>
+   */
   const loadAllData = async () => {
     try {
       setLoading(true);
 
-      // Fetch all data in parallel
+      // Fetch all data in parallel for optimal performance
+      // Using Promise.all to load profile, timeline, checklist, and vendors simultaneously
       const [profileRes, timelineRes, checklistRes, vendorsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).single(),
         supabase.from("timeline").select("*").eq("user_id", userId).single(),
@@ -83,10 +99,31 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
         supabase.from("vendors").select("*").eq("user_id", userId).order("due_date", { ascending: true }),
       ]);
 
-      setProfile(profileRes.data);
-      setTimeline(timelineRes.data);
-      setChecklist(checklistRes.data || []);
-      setVendors(vendorsRes.data || []);
+      // Check for errors before setting state to prevent null reference issues
+      if (profileRes.error) {
+        console.error("Error loading profile:", profileRes.error);
+        toast({ title: "Error", description: "Failed to load profile data", variant: "destructive" });
+      } else {
+        setProfile(profileRes.data);
+      }
+
+      if (timelineRes.error) {
+        console.error("Error loading timeline:", timelineRes.error);
+      } else {
+        setTimeline(timelineRes.data);
+      }
+
+      if (checklistRes.error) {
+        console.error("Error loading checklist:", checklistRes.error);
+      } else {
+        setChecklist(checklistRes.data || []);
+      }
+
+      if (vendorsRes.error) {
+        console.error("Error loading vendors:", vendorsRes.error);
+      } else {
+        setVendors(vendorsRes.data || []);
+      }
     } catch (error) {
       console.error("Error loading data:", error);
       toast({ title: "Error", description: "Failed to load planning data", variant: "destructive" });
@@ -95,7 +132,10 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     }
   };
 
-  // Calculations
+  /**
+   * Calculate days remaining until wedding date
+   * @returns Number of days until wedding (0 if no date set or past date)
+   */
   const getDaysUntilWedding = (): number => {
     if (!timeline?.wedding_date) return 0;
     const today = new Date();
@@ -104,6 +144,11 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     return Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
   };
 
+  /**
+   * Calculate wedding planning progress percentage
+   * Based on time elapsed between engagement and wedding dates
+   * @returns Progress percentage (0-100)
+   */
   const getTimelineProgress = (): number => {
     if (!timeline?.engagement_date || !timeline?.wedding_date) return 0;
     const engagement = new Date(timeline.engagement_date);
@@ -114,20 +159,31 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     return Math.min(Math.max(Math.round((elapsed / totalTime) * 100), 0), 100);
   };
 
+  // Budget calculations - sum all vendor amounts for total budget and spending
   const totalBudget = vendors.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
   const spent = vendors.filter((v) => v.paid).reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+  
+  // Display calculations
   const daysUntilWedding = getDaysUntilWedding();
   const timelineProgress = getTimelineProgress();
   const todaysFocus = checklist.filter((task) => !task.completed).slice(0, 4);
   const userName = profile?.full_name?.split(" ")[0] || "Beautiful Bride";
 
-  // Vendor actions
+  /**
+   * Add a new vendor to the database
+   * Validates required fields (name, service) before inserting
+   * Reloads all data after successful insertion
+   */
   const addVendor = async () => {
+    // Validate required fields
     if (!vendorForm.name || !vendorForm.service) {
       toast({ title: "Error", description: "Please fill in vendor name and service", variant: "destructive" });
       return;
     }
 
+    setVendorsLoading(true);
+    
+    // Insert new vendor with user_id for RLS policy compliance
     const { error } = await supabase.from("vendors").insert({
       user_id: userId,
       name: vendorForm.name,
@@ -139,43 +195,71 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     });
 
     if (error) {
+      console.error("Error adding vendor:", error);
       toast({ title: "Error", description: "Failed to add vendor", variant: "destructive" });
     } else {
       toast({ title: "Success!", description: `${vendorForm.name} added to your vendors` });
       setShowVendorDialog(false);
       setVendorForm({ name: "", service: "", amount: "", due_date: "", notes: "" });
-      loadAllData();
+      await loadAllData(); // Reload to show updated vendor list
     }
+    
+    setVendorsLoading(false);
   };
 
+  /**
+   * Toggle vendor payment status between paid and unpaid
+   * Updates the vendor record and refreshes data
+   */
   const toggleVendorPaid = async (vendorId: string, currentPaid: boolean) => {
+    setVendorsLoading(true);
+    
     const { error } = await supabase.from("vendors").update({ paid: !currentPaid }).eq("id", vendorId);
 
     if (error) {
+      console.error("Error updating vendor payment:", error);
       toast({ title: "Error", description: "Failed to update payment status", variant: "destructive" });
     } else {
-      loadAllData();
+      await loadAllData(); // Refresh to update budget calculations
     }
+    
+    setVendorsLoading(false);
   };
 
+  /**
+   * Delete a vendor from the database
+   * Confirms action and reloads data after deletion
+   */
   const deleteVendor = async (vendorId: string) => {
+    setVendorsLoading(true);
+    
     const { error } = await supabase.from("vendors").delete().eq("id", vendorId);
 
     if (error) {
+      console.error("Error deleting vendor:", error);
       toast({ title: "Error", description: "Failed to delete vendor", variant: "destructive" });
     } else {
       toast({ title: "Deleted", description: "Vendor removed" });
-      loadAllData();
+      await loadAllData();
     }
+    
+    setVendorsLoading(false);
   };
 
-  // Checklist actions
+  /**
+   * Add a new task to the wedding checklist
+   * Validates task name is provided before inserting
+   */
   const addTask = async () => {
+    // Validate required task name field
     if (!taskForm.task_name) {
       toast({ title: "Error", description: "Please enter a task name", variant: "destructive" });
       return;
     }
 
+    setChecklistLoading(true);
+    
+    // Insert new checklist item with user_id for RLS compliance
     const { error } = await supabase.from("checklist").insert({
       user_id: userId,
       task_name: taskForm.task_name,
@@ -185,35 +269,57 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     });
 
     if (error) {
+      console.error("Error adding task:", error);
       toast({ title: "Error", description: "Failed to add task", variant: "destructive" });
     } else {
       toast({ title: "Success!", description: "Task added to checklist" });
       setShowTaskDialog(false);
       setTaskForm({ task_name: "", emoji: "", due_date: "" });
-      loadAllData();
+      await loadAllData();
     }
+    
+    setChecklistLoading(false);
   };
 
+  /**
+   * Toggle task completion status
+   * Updates checklist item and refreshes data
+   */
   const toggleTask = async (taskId: string, currentCompleted: boolean) => {
+    setChecklistLoading(true);
+    
     const { error } = await supabase.from("checklist").update({ completed: !currentCompleted }).eq("id", taskId);
 
     if (error) {
+      console.error("Error updating task:", error);
       toast({ title: "Error", description: "Failed to update task", variant: "destructive" });
     } else {
-      loadAllData();
+      await loadAllData();
     }
+    
+    setChecklistLoading(false);
   };
 
+  /**
+   * Delete a task from the checklist
+   * Removes task and refreshes data
+   */
   const deleteTask = async (taskId: string) => {
+    setChecklistLoading(true);
+    
     const { error } = await supabase.from("checklist").delete().eq("id", taskId);
 
     if (error) {
+      console.error("Error deleting task:", error);
       toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
     } else {
-      loadAllData();
+      await loadAllData();
     }
+    
+    setChecklistLoading(false);
   };
 
+  // Show loading spinner during initial data load
   if (loading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -222,7 +328,10 @@ const PlannerWorkspace: React.FC<PlannerWorkspaceProps> = ({ userId }) => {
     );
   }
 
-  // Categorize spending
+  /**
+   * Categorize vendor spending by service type
+   * Calculates total and paid amounts per category for finance tracking
+   */
   const categorySpending = vendors.reduce(
     (acc, v) => {
       const category = v.service;
