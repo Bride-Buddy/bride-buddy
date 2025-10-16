@@ -12,3 +12,5 @@ serve(() => {
     { headers: { "Content-Type": "application/json" } }
   );
 });
+supabase functions deploy env-test
+supabase functions invoke env-test
