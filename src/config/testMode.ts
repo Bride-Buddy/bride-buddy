@@ -7,7 +7,7 @@
 // TEST_MODE = 3: Full email verification, complete onboarding flow, production-ready testing
 
 type TestModeValue = 0 | 1 | 2 | 3;
-export const TEST_MODE: TestModeValue = 3; // Change to 0 for production, 1/2/3 for testing
+export const TEST_MODE: TestModeValue = 2; // Change to 0 for production, 1/2/3 for testing
 
 // Test mode settings
 export const TEST_MODE_CONFIG = {
@@ -39,7 +39,7 @@ export const TEST_MODE_CONFIG = {
     redirectToOnboardingChat: true, // MATCHED: OnboardingChat.tsx
     trialDurationMinutes: 5, // CHANGED: 5 minutes (not 30)
     autoRedirectToModalAfterTrial: true, // NEW: Auto-redirect to Modal when trial expires
-    redirectToPlannerWorkspace: true, // PlannerWorkspace.tsx
+    redirectToDashboard: true, // Dashboard.tsx
     showPricingModalsAfterTrial: true, // Modal.tsx appears after 5 min trial
     instantVIPUpgrade: false,
     hasBasicTier: true,
@@ -61,8 +61,8 @@ export const TEST_MODE_CONFIG = {
     createUserProfileAfterOnboarding: true, // NEW: Create DB profile after onboarding
     trialDurationMinutes: 5, // 5 minute free trial
     autoRedirectToModalAfterTrial: true, // Auto-redirect to Modal when trial expires
-    redirectToPlannerWorkspace: true, // MATCHED: PlannerWorkspace.tsx
-    autoPopulateUserInfo: true, // NEW: Auto-populate user data in planner-workspace
+    redirectToDashboard: true, // MATCHED: Dashboard.tsx
+    autoPopulateUserInfo: true, // NEW: Auto-populate user data in dashboard
     showPricingModalsAfterTrial: true, // Modal.tsx after 5 min
     instantVIPUpgrade: false,
     hasBasicTier: true,
