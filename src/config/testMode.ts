@@ -70,7 +70,8 @@ export const TEST_MODE_CONFIG = {
     allowBothTierSelection: true,
   },
 
-   // Production Mode
+  production: {
+    // Production Mode
     skipEmailVerification: false,
     requireEmailVerificationFirst: true,
     showAuthRedirect: true,
@@ -78,7 +79,7 @@ export const TEST_MODE_CONFIG = {
     landingPage: "auth",
     autoPopulateUserInfo: true,
     createPlannerWorkspace: true,
-    trialDurationMinutes: 1,
+    trialDurationDays: 7,
     showPricingModalsAfterTrial: true,
     autoRedirectToModalAfterTrial: true,
     instantVIPUpgrade: false,
